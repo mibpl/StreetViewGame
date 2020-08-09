@@ -17,7 +17,7 @@
           </v-list>
           <v-card-actions v-if="isChief()">
             <v-spacer />
-            <v-btn color="primary">Start game</v-btn>
+            <v-btn v-on:click="startGame" color="primary">Start game</v-btn>
           </v-card-actions>
           <v-card-text v-if="!isChief()">
             <div>Waiting for {{ chief }} to start the game...</div>
@@ -45,6 +45,9 @@ export default {
     isChief() {
       return true;
     },
+    startGame() {
+      this.$router.push({ name: 'Game', params: { roomId: this.$route.query.roomId } });
+    }
   },
   components: {},
 };
