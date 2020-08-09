@@ -22,11 +22,19 @@
         </v-row>
         <v-row align="center">
           <v-col class="text-center">
-            <v-btn id="create_room_btn" color="primary">
+            <v-btn v-on:click="createRoom" id="create_room_btn" color="primary">
               Create a new room
             </v-btn>
           </v-col>
         </v-row>
+      </v-col>
+    </v-row>
+    <v-row align="center" justify="center">
+      <v-col cols="2">
+        <ErrorDialog
+          :show="showErrorDialog"
+          v-on:close-dialog="showErrorDialog = false"
+        />
       </v-col>
     </v-row>
   </v-container>
@@ -37,10 +45,21 @@
 //  * root page is opened
 //  * join link is clicked
 // In the latter situation, also the Play button becomes active.
+import ErrorDialog from '@/components/ErrorDialog';
+import * as firebase from 'firebase/app';
+import { trySignIn } from '@/store';
+import { hri } from 'human-readable-ids';
 
 export default {
   name: 'Main',
-  components: {},
+  components: {
+    ErrorDialog,
+  },
+  data: function() {
+    return {
+      showErrorDialog: false,
+    };
+  },
   computed: {
     username: {
       get() {
@@ -49,6 +68,27 @@ export default {
       set(value) {
         this.$store.commit('setUsername', value);
       },
+    },
+  },
+  methods: {
+    createRoom: function() {
+      const uid = this.$store.state.uid;
+      if (uid === null) {
+        trySignIn();
+        this.showErrorDialog = true;
+        return;
+      }
+      let roomId = hri.random();
+      let roomRef = firebase
+        .database()
+        .ref(process.env.VUE_APP_DB_PREFIX + roomId);
+      roomRef.set({ chief: uid, started: false, finished: false }, error => {
+        if (error) {
+          this.showErrorDialog = true;
+        } else {
+          this.$router.push({ name: 'Lobby', params: { roomId: roomId } });
+        }
+      });
     },
   },
 };
