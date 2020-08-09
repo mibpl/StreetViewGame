@@ -1,10 +1,10 @@
 module.exports = {
   lintOnSave: false,
-  transpileDependencies: ["vuetify"],
+  transpileDependencies: ['vuetify'],
   chainWebpack: config => {
-    config.plugin("html").tap(args => {
-      args[0].title = "Geoguesser";
+    config.plugin('html').tap(args => {
+      args[0].title = 'Geoguesser';
       return args;
     });
-  }
+  },
 };
