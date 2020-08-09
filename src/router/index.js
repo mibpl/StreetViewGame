@@ -11,6 +11,11 @@ const routes = [
     component: Main,
   },
   {
+    path: '/join/:roomId',
+    name: 'Main',
+    component: Main,
+  },
+  {
     path: '/lobby',
     name: 'Lobby',
     // route level code-splitting
@@ -26,6 +31,10 @@ const routes = [
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
     component: () => import(/* webpackChunkName: "game" */ '@/views/Game.vue'),
+  },
+  {
+    path: '*',
+    redirect: { name: 'Main' },
   },
 ];
 
