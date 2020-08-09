@@ -2,7 +2,7 @@ import Vue from 'vue';
 import Vuetify from 'vuetify';
 import { shallowMount, createLocalVue } from '@vue/test-utils';
 import Main from '@/views/Main.vue';
-import newStore from '@/store';
+import { newStore } from '@/store';
 
 Vue.use(Vuetify);
 
