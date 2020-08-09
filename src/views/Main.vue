@@ -6,6 +6,7 @@
           <v-card-text>
             <v-form>
               <v-text-field
+                v-model="username"
                 label="Username"
                 name="username"
                 prepend-icon="mdi-account"
@@ -40,5 +41,15 @@
 export default {
   name: 'Main',
   components: {},
+  computed: {
+    username: {
+      get() {
+        return this.$store.state.username;
+      },
+      set(value) {
+        this.$store.commit('setUsername', value);
+      },
+    },
+  },
 };
 </script>
