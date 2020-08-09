@@ -2,10 +2,10 @@
   <v-dialog max-width="290" v-model="dialogVisible">
     <v-card>
       <v-card-title class="headline">
-        Connection error
+        {{ title }}
       </v-card-title>
       <v-card-text>
-        There was a problem with connection to Firebase :( Try again later.
+        {{ message }}
       </v-card-text>
 
       <v-card-actions>
@@ -20,6 +20,8 @@
 export default {
   props: {
     show: Boolean,
+    title: String,
+    message: String,
   },
   data: function() {
     return {

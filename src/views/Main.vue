@@ -32,8 +32,10 @@
     <v-row align="center" justify="center">
       <v-col cols="2">
         <ErrorDialog
-          :show="showErrorDialog"
-          v-on:close-dialog="showErrorDialog = false"
+          :show="errorDialog.show"
+          :title="errorDialog.title"
+          :message="errorDialog.message"
+          v-on:close-dialog="errorDialog.show = false"
         />
       </v-col>
     </v-row>
@@ -57,7 +59,11 @@ export default {
   },
   data: function() {
     return {
-      showErrorDialog: false,
+      errorDialog: {
+        show: false,
+        title: '',
+        message: '',
+      },
     };
   },
   computed: {
@@ -75,14 +81,43 @@ export default {
       const uid = this.$store.state.uid;
       if (uid === null) {
         trySignIn();
-        this.showErrorDialog = true;
+        this.errorDialog = {
+          show: true,
+          title: 'Connection Error',
+          message:
+            'There was a problem with connection to Firebase :( Try again later.',
+        };
+        return;
+      }
+      const username = this.username;
+      if (!username) {
+        this.errorDialog = {
+          show: true,
+          title: 'Username required',
+          message: 'Please set username first.',
+        };
         return;
       }
       let roomId = hri.random();
-      let roomRef = firebase
+      let roomObjectName = process.env.VUE_APP_DB_PREFIX + roomId;
+      let roomRef = firebase.database().ref(roomObjectName);
+      // Yes, this might potentially result in having a room with nothing else
+      // but just this disconnected player. Pretty unlikely and no big deal.
+      let playerConnectedRef = firebase
         .database()
-        .ref(process.env.VUE_APP_DB_PREFIX + roomId);
-      roomRef.set({ chief: uid, started: false, finished: false }, error => {
+        .ref(`${roomObjectName}/players/${uid}/connected`);
+      playerConnectedRef.onDisconnect().set(false);
+      let roomObject = {
+        chief: uid,
+        started: false,
+        finished: false,
+        players: {},
+      };
+      roomObject.players[uid] = {
+        username: username,
+        connected: true,
+      };
+      roomRef.set(roomObject, error => {
         if (error) {
           this.showErrorDialog = true;
         } else {
