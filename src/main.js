@@ -8,7 +8,8 @@ import { newStore } from '@/store';
 Vue.config.productionTip = false;
 
 let firebaseConfig;
-if (process.env.NODE_ENV === 'production') {
+console.log(process.env);
+if (process.env.VUE_APP_DB_ENV === 'production') {
   firebaseConfig = {
     apiKey: process.env.VUE_APP_FIREBASE_API_KEY,
     authDomain: process.env.VUE_APP_FIREBASE_AUTH_DOMAIN,
