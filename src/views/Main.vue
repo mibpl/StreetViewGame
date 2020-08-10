@@ -49,6 +49,7 @@
 // In the latter situation, also the Play button becomes active.
 import ErrorDialog from '@/components/ErrorDialog';
 import * as firebase from 'firebase/app';
+import 'firebase/database';
 import { trySignIn } from '@/store';
 import { hri } from 'human-readable-ids';
 
