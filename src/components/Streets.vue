@@ -5,8 +5,6 @@
   </div>
 </template>
 
-
-
 <script>
 /*global google*/
 export default {

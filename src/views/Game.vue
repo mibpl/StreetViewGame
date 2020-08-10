@@ -21,8 +21,8 @@ export default {
   },
   data: function() {
     return {
-      mapPosition: new google.maps.LatLng(37.75598,-122.41231),
-    }
-  }
+      mapPosition: new google.maps.LatLng(37.75598, -122.41231),
+    };
+  },
 };
 </script>
