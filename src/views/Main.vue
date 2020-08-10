@@ -101,13 +101,15 @@ export default {
       }
       let roomId = hri.random();
       let roomObjectName = process.env.VUE_APP_DB_PREFIX + roomId;
-      let roomRef = firebase.database().ref(roomObjectName);
+
       // Yes, this might potentially result in having a room with nothing else
       // but just this disconnected player. Pretty unlikely and no big deal.
       let playerConnectedRef = firebase
         .database()
         .ref(`${roomObjectName}/players/${uid}/connected`);
       playerConnectedRef.onDisconnect().set(false);
+
+      let roomRef = firebase.database().ref(roomObjectName);
       let roomObject = {
         chief: uid,
         started: false,
@@ -120,7 +122,13 @@ export default {
       };
       roomRef.set(roomObject, error => {
         if (error) {
-          this.showErrorDialog = true;
+          console.log(error);
+          this.errorDialog = {
+            show: true,
+            title: 'Firebase connection error',
+            message:
+              'There was an error creating the room. Please try again later.',
+          };
         } else {
           this.$router.push({ name: 'lobby', params: { roomId: roomId } });
         }
