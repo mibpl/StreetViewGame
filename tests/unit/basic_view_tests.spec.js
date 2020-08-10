@@ -3,6 +3,7 @@ import Vuetify from 'vuetify';
 import { shallowMount, createLocalVue } from '@vue/test-utils';
 import Main from '@/views/Main.vue';
 import { newStore } from '@/store';
+import firebase from 'firebase/app';
 
 Vue.use(Vuetify);
 
@@ -31,6 +32,12 @@ describe('Main View', () => {
   };
 
   beforeEach(() => {
+    jest.spyOn(firebase, 'auth').mockImplementation(() => {
+      return {
+        signInAnonymously: jest.fn(() => Promise.resolve()),
+        onAuthStateChanged: jest.fn(),
+      };
+    });
     vuetify = new Vuetify();
     store = newStore();
   });
