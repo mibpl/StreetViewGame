@@ -122,7 +122,7 @@ export default {
         if (error) {
           this.showErrorDialog = true;
         } else {
-          this.$router.push({ name: 'Lobby', params: { roomId: roomId } });
+          this.$router.push({ name: 'lobby', params: { roomId: roomId } });
         }
       });
     },

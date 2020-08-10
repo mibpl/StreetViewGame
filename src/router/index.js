@@ -7,17 +7,17 @@ Vue.use(VueRouter);
 const routes = [
   {
     path: '/',
-    name: 'Main',
+    name: 'main',
     component: Main,
   },
   {
     path: '/join/:roomId',
-    name: 'Main',
+    name: 'join',
     component: Main,
   },
   {
     path: '/lobby/:roomId',
-    name: 'Lobby',
+    name: 'lobby',
     // route level code-splitting
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
@@ -26,7 +26,7 @@ const routes = [
   },
   {
     path: '/game/:roomId',
-    name: 'Game',
+    name: 'game',
     // route level code-splitting
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
@@ -34,7 +34,7 @@ const routes = [
   },
   {
     path: '*',
-    redirect: { name: 'Main' },
+    redirect: { name: 'main' },
   },
 ];
 
