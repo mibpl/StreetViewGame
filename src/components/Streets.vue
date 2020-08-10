@@ -8,18 +8,23 @@
 
 
 <script>
+/*global google*/
 export default {
-  props: {},
+  props: {
+    mapPosition: {
+      type: google.maps.LatLng,
+      required: true,
+    },
+  },
   data: function() {
     return {};
   },
   name: 'Streets',
   mounted: function() {
-    const position = new google.maps.LatLng(37.75598,-122.41231);
     new google.maps.StreetViewPanorama(
       document.getElementById('street-view-anchor'),
       {
-        position: position,
+        position: this.mapPosition,
         pov: { heading: -110, pitch: 0 },
         zoom: 1,
         addressControl: false,

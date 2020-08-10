@@ -8,6 +8,7 @@
 
 
 <script>
+/*global google*/
 export default {
   props: {},
   data: function() {
