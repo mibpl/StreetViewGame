@@ -15,14 +15,19 @@ export default {
   },
   name: 'Streets',
   mounted: function() {
-    console.log("mounted");
-    const position = new google.maps.LatLng(37.86926,-122.254811);
+    const position = new google.maps.LatLng(37.75598,-122.41231);
     new google.maps.StreetViewPanorama(
       document.getElementById('street-view-anchor'),
       {
         position: position,
-        pov: { heading: 165, pitch: 0 },
+        pov: { heading: -110, pitch: 0 },
         zoom: 1,
+        addressControl: false,
+        clickToGo: true,
+        fullscreenControl: false,
+        imageDateControl: false,
+        linksControl: false,
+        showRoadLabels: false,
       },
     );
   },

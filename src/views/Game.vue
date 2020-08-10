@@ -15,7 +15,7 @@ export default {
   name: 'Game',
   components: {
     Streets,
-    MarkerMap
+    MarkerMap,
   },
 };
 </script>
