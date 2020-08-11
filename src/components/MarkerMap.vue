@@ -15,15 +15,24 @@ export default {
   name: 'MarkerMap',
   mounted: function() {
     const position = new google.maps.LatLng(37.86926, -122.254811);
-    const map = new google.maps.Map(document.getElementById('map-anchor'), {
+    this.map = new google.maps.Map(document.getElementById('map-anchor'), {
       zoom: 4,
       center: new google.maps.LatLng(0, 0),
+      disableDefaultUI: true,
     });
 
-    const marker = new google.maps.Marker({
+    this.marker = new google.maps.Marker({
       position: position,
-      map: map,
-      title: 'Hello World!',
+      map: this.map,
+      title: 'My guess',
+    });
+    this.map.addListener('click', event => {
+      this.marker.setMap(null);
+      this.marker = new google.maps.Marker({
+        position: event.latLng,
+        map: this.map,
+        title: 'My guess',
+      });
     });
   },
 };
