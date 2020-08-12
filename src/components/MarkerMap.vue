@@ -39,7 +39,7 @@ export default {
   },
   methods: {
     guess: function() {
-      this.$emit('on-guess', this.marker.position);
+      this.$emit('on-guess', { latLng: this.marker.position.toJSON() });
     },
   },
 };
