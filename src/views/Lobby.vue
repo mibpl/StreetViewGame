@@ -48,7 +48,7 @@ export default {
     startGame() {
       this.$router.push({
         name: 'game',
-        params: { roomId: this.$route.query.roomId },
+        params: { roomId: this.$route.params.roomId },
       });
     },
   },

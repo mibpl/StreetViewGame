@@ -2,7 +2,7 @@
   <div>
     <span>Game view</span>
     <Streets v-bind:mapPosition="mapPosition" />
-    <MarkerMap />
+    <MarkerMap @on-guess="guess($event)" />
   </div>
 </template>
 
@@ -23,6 +23,11 @@ export default {
     return {
       mapPosition: new google.maps.LatLng(37.75598, -122.41231),
     };
+  },
+  methods: {
+    guess: function(event) {
+      console.log('made a guess', event.lat(), event.lng());
+    },
   },
 };
 </script>
