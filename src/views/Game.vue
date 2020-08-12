@@ -1,6 +1,7 @@
 <template>
   <div>
     <span>Game view</span>
+    <button v-on:click="jumpdebug()">Jump!</button>
     <p>Round {{ round }}</p>
     <Streets v-bind:mapPosition="mapPosition" />
     <MarkerMap @on-guess="guess($event)" />
@@ -15,6 +16,7 @@ import 'firebase/database';
 // This is the main view for the actual game.
 import Streets from '@/components/Streets.vue';
 import MarkerMap from '@/components/MarkerMap.vue';
+import { chooseRandomStreetView } from '@/util.js';
 
 export default {
   name: 'Game',
@@ -40,6 +42,13 @@ export default {
         .set({
           latLng: event.latLng,
         });
+    },
+    jumpdebug: function() {
+      function cb(pos) {
+        console.log('Trying to jump to', pos);
+        this.mapPosition = pos;
+      }
+      chooseRandomStreetView(cb.bind(this));
     },
   },
 };

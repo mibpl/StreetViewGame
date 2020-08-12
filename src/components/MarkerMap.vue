@@ -3,11 +3,13 @@
     <p style="text-decoration: underline">Baaa!</p>
     <div id="map-anchor" style="width: 800px'; height: 800px" />
     <button v-on:click="guess()">Make a guess</button>
+    <button v-on:click="mathdebug()">Do some math!</button>
   </div>
 </template>
 
 <script>
 /*global google*/
+import { chooseRandomPointOnSphere } from '@/util.js';
 
 export default {
   props: {},
@@ -40,6 +42,18 @@ export default {
   methods: {
     guess: function() {
       this.$emit('on-guess', { latLng: this.marker.position.toJSON() });
+    },
+    mathdebug: function() {
+      for (let i = 0; i < 100; i++) {
+        const pos = chooseRandomPointOnSphere();
+        console.log(pos.toJSON());
+        new google.maps.Marker({
+          position: pos,
+          map: this.map,
+          title: 'foo',
+          label: pos.toString(),
+        });
+      }
     },
   },
 };
