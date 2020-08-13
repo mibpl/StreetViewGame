@@ -52,6 +52,7 @@ import * as firebase from 'firebase/app';
 import 'firebase/database';
 import { trySignIn } from '@/store';
 import { hri } from 'human-readable-ids';
+import { aChooseRandomStreetView } from '@/util.js';
 
 export default {
   name: 'Main',
@@ -78,7 +79,7 @@ export default {
     },
   },
   methods: {
-    createRoom: function() {
+    createRoom: async function() {
       const uid = this.$store.state.uid;
       if (uid === null) {
         trySignIn();
@@ -102,6 +103,13 @@ export default {
       let roomId = hri.random();
       let roomObjectName = process.env.VUE_APP_DB_PREFIX + roomId;
 
+      const rounds = {};
+      for (let i=0; i<5; i++) {
+        rounds[i] = {
+          map_position: (await aChooseRandomStreetView()).toJSON(),
+        }
+      }
+
       // Yes, this might potentially result in having a room with nothing else
       // but just this disconnected player. Pretty unlikely and no big deal.
       let playerConnectedRef = firebase
@@ -115,6 +123,8 @@ export default {
         started: false,
         finished: false,
         players: {},
+        current_round: 0,
+        rounds: rounds,
       };
       roomObject.players[uid] = {
         username: username,
