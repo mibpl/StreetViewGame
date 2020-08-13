@@ -21,6 +21,12 @@ export function newStore() {
     state: {
       username: Cookies.get('username') || null,
       uid: null,
+      dialog: {
+        visible: false,
+        title: '',
+        text: '',
+        confirmAction: null,
+      },
     },
     mutations: {
       setUsername(state, username) {
@@ -29,6 +35,15 @@ export function newStore() {
       },
       setUid(state, uid) {
         state.uid = uid;
+      },
+      setDialogVisibility(state, visible) {
+        state.dialog.visible = visible;
+      },
+      showDialog(state, options) {
+        state.dialog.title = options.title || '';
+        state.dialog.text = options.text || '';
+        state.dialog.confirmAction = options.confirmAction || null;
+        state.dialog.visible = true;
       },
     },
     actions: {},
