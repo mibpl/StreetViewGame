@@ -89,10 +89,10 @@ export default {
       let roomObjectName = process.env.VUE_APP_DB_PREFIX + roomId;
 
       const rounds = {};
-      for (let i=0; i<5; i++) {
+      for (let i = 0; i < 5; i++) {
         rounds[i] = {
           map_position: (await aChooseRandomStreetView()).toJSON(),
-        }
+        };
       }
 
       // Yes, this might potentially result in having a room with nothing else

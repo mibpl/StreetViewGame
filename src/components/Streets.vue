@@ -35,7 +35,7 @@ export default {
           showRoadLabels: false,
         },
       );
-    }
+    },
   },
   mounted: function() {
     this.refreshView();
