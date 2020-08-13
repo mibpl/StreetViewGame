@@ -31,12 +31,7 @@
     </v-row>
     <v-row align="center" justify="center">
       <v-col cols="2">
-        <ErrorDialog
-          :show="errorDialog.show"
-          :title="errorDialog.title"
-          :message="errorDialog.message"
-          v-on:close-dialog="errorDialog.show = false"
-        />
+        <Dialog />
       </v-col>
     </v-row>
   </v-container>
@@ -47,26 +42,18 @@
 //  * root page is opened
 //  * join link is clicked
 // In the latter situation, also the Play button becomes active.
-import ErrorDialog from '@/components/ErrorDialog';
+import Dialog from '@/components/Dialog';
 import * as firebase from 'firebase/app';
 import 'firebase/database';
 import { trySignIn } from '@/store';
 import { hri } from 'human-readable-ids';
 import { aChooseRandomStreetView } from '@/util.js';
+import { mapMutations } from 'vuex';
 
 export default {
   name: 'Main',
   components: {
-    ErrorDialog,
-  },
-  data: function() {
-    return {
-      errorDialog: {
-        show: false,
-        title: '',
-        message: '',
-      },
-    };
+    Dialog,
   },
   computed: {
     username: {
@@ -83,21 +70,19 @@ export default {
       const uid = this.$store.state.uid;
       if (uid === null) {
         trySignIn();
-        this.errorDialog = {
-          show: true,
+        this.showDialog({
           title: 'Connection Error',
-          message:
+          text:
             'There was a problem with connection to Firebase :( Try again later.',
-        };
+        });
         return;
       }
       const username = this.username;
       if (!username) {
-        this.errorDialog = {
-          show: true,
+        this.showDialog({
           title: 'Username required',
-          message: 'Please set username first.',
-        };
+          text: 'Please set username first.',
+        });
         return;
       }
       let roomId = hri.random();
@@ -133,17 +118,17 @@ export default {
       roomRef.set(roomObject, error => {
         if (error) {
           console.log(error);
-          this.errorDialog = {
-            show: true,
+          this.showDialog({
             title: 'Firebase connection error',
-            message:
+            text:
               'There was an error creating the room. Please try again later.',
-          };
+          });
         } else {
           this.$router.push({ name: 'lobby', params: { roomId: roomId } });
         }
       });
     },
+    ...mapMutations(['showDialog']),
   },
 };
 </script>
