@@ -31,6 +31,8 @@ if (process.env.VUE_APP_DB_ENV === 'production') {
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 
+firebase.database.enableLogging(process.env.NODE_ENV !== 'production');
+
 if (process.env.NODE_ENV === 'production') {
   firebase.analytics();
 }

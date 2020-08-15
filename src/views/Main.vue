@@ -17,7 +17,9 @@
         </v-card>
         <v-row v-if="$route.params.roomId" align="center">
           <v-col class="text-center">
-            <v-btn id="play_btn" color="primary">Play!</v-btn>
+            <v-btn id="play_btn" color="primary" v-on:click="joinGame">
+              Play!
+            </v-btn>
           </v-col>
         </v-row>
         <v-row align="center">
@@ -49,6 +51,7 @@ import { trySignIn } from '@/store';
 import { hri } from 'human-readable-ids';
 import { aChooseRandomStreetView } from '@/util.js';
 import { mapMutations } from 'vuex';
+import { roomObjectPath } from '@/database_utils.js';
 
 export default {
   name: 'Main',
@@ -66,7 +69,7 @@ export default {
     },
   },
   methods: {
-    createRoom: async function() {
+    getUid: function() {
       const uid = this.$store.state.uid;
       if (uid === null) {
         trySignIn();
@@ -75,18 +78,32 @@ export default {
           text:
             'There was a problem with connection to Firebase :( Try again later.',
         });
-        return;
+        return null;
       }
+      return uid;
+    },
+    getUsername: function() {
       const username = this.username;
       if (!username) {
         this.showDialog({
           title: 'Username required',
           text: 'Please set username first.',
         });
+        return null;
+      }
+      return username;
+    },
+    createRoom: async function() {
+      const uid = this.getUid();
+      if (!uid) {
+        return;
+      }
+      const username = this.getUsername();
+      if (!username) {
         return;
       }
       let roomId = hri.random();
-      let roomObjectName = process.env.VUE_APP_DB_PREFIX + roomId;
+      let roomObjectName = roomObjectPath(roomId);
 
       const rounds = {};
       for (let i = 0; i < 5; i++) {
@@ -126,6 +143,75 @@ export default {
         } else {
           this.$router.push({ name: 'lobby', params: { roomId: roomId } });
         }
+      });
+    },
+    joinGame: function() {
+      const uid = this.getUid();
+      if (!uid) {
+        return;
+      }
+      const username = this.getUsername();
+      if (!username) {
+        return;
+      }
+      const roomId = this.$route.params.roomId;
+      if (!roomId) {
+        this.showDialog({
+          title: 'Error',
+          text: 'Redirecting to main page.',
+          confirm_action: () => {
+            this.$router.push({ name: 'main' });
+          },
+        });
+      }
+
+      let roomRef = firebase.database().ref(roomObjectPath(roomId));
+      roomRef.once('value').then(roomSnapshot => {
+        if (!roomSnapshot.exists()) {
+          this.showDialog({
+            title: "Room doesn't exist",
+            text:
+              "Room you are trying to join doesn't exist. " +
+              'Use correct link or create a new room.',
+            confirmAction: function() {
+              this.$router.push({ name: 'main' });
+            },
+          });
+          return;
+        }
+        if (roomSnapshot.val().started) {
+          this.showDialog({
+            title: 'Game has already started',
+            text:
+              'Game you are trying to join has been already started. ' +
+              'Use a different link or create a new room.',
+            confirmAction: function() {
+              this.$router.push({ name: 'main' });
+            },
+          });
+          return;
+        }
+        let playerConnectedRef = roomRef.child(`players/${uid}/connected`);
+        playerConnectedRef.onDisconnect().set(false);
+
+        roomRef.child(`players/${uid}`).set(
+          {
+            username: username,
+            connected: true,
+          },
+          error => {
+            if (error) {
+              console.log(error);
+              this.showDialog({
+                title: 'Firebase connection error',
+                text:
+                  'There was an error joining the room. Please try again later.',
+              });
+            } else {
+              this.$router.push({ name: 'lobby', params: { roomId: roomId } });
+            }
+          },
+        );
       });
     },
     ...mapMutations(['showDialog']),
