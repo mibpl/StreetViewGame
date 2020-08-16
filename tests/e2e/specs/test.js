@@ -9,6 +9,25 @@ beforeEach(() => {
   });
 });
 
+Cypress.on('window:before:load', win => {
+  console.log('before load');
+  const google = {
+    maps: {
+      StreetViewService: cy.stub(),
+      LatLng: cy.stub(),
+      StreetViewPreference: cy.stub(),
+    },
+  };
+
+  // Theoretically we block maps.googleapis.com in cypress.json but just in
+  // case make this property unchangeable.
+  Object.defineProperty(win, 'google', {
+    configurable: false,
+    get: () => google,
+    set: () => {},
+  });
+});
+
 describe('Main view', () => {
   it('propagates username from cookie to root page', () => {
     cy.setCookie('username', 'the_user');
