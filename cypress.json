@@ -1,3 +1,4 @@
 {
+  "blacklistHosts": "maps.googleapis.com",
   "pluginsFile": "tests/e2e/plugins/index.js"
 }
