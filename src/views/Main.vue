@@ -51,7 +51,7 @@ import { trySignIn } from '@/store';
 import { hri } from 'human-readable-ids';
 import { aChooseRandomStreetView } from '@/util.js';
 import { mapMutations } from 'vuex';
-import { roomObjectPath } from '@/database_utils.js';
+import { roomObjectPath } from '@/firebase_utils.js';
 
 export default {
   name: 'Main',

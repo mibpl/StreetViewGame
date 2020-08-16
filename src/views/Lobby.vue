@@ -41,7 +41,7 @@ import { mapMutations } from 'vuex';
 import * as firebase from 'firebase/app';
 import 'firebase/database';
 import Dialog from '@/components/Dialog';
-import { roomObjectPath } from '@/database_utils.js';
+import { roomObjectPath } from '@/firebase_utils.js';
 import { trySignIn } from '@/store';
 
 export default {
