@@ -22,7 +22,7 @@ import 'firebase/database';
 import Streets from '@/components/Streets.vue';
 import MarkerMap from '@/components/MarkerMap.vue';
 import RoundStatus from '@/components/RoundStatus.vue';
-import { chooseRandomStreetView, haversine_distance } from '@/util.js';
+import maps from '@/maps_util.js';
 
 var roomState = {};
 
@@ -83,7 +83,7 @@ export default {
         console.log('Trying to jump to', pos);
         this.mapPosition = pos;
       }
-      chooseRandomStreetView(cb.bind(this));
+      maps.chooseRandomStreetView(cb.bind(this));
     },
     isChief() {
       return true;
@@ -96,7 +96,7 @@ export default {
       const guesses = roomState.rounds.[this.round].guesses;
       for (const [player, guess] of Object.entries(guesses)) {
         summary[player] = {
-          distance: haversine_distance(this.mapPosition, guess.latLng)
+          distance: maps.haversine_distance(this.mapPosition, guess.latLng)
         }
       }
 

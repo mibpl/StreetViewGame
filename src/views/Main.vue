@@ -49,7 +49,7 @@ import * as firebase from 'firebase/app';
 import 'firebase/database';
 import { trySignIn } from '@/store';
 import { hri } from 'human-readable-ids';
-import { aChooseRandomStreetView } from '@/util.js';
+import maps from '@/maps_util.js';
 import { mapMutations } from 'vuex';
 import { roomObjectPath } from '@/firebase_utils.js';
 
@@ -108,7 +108,7 @@ export default {
       const rounds = {};
       for (let i = 0; i < 5; i++) {
         rounds[i] = {
-          map_position: (await aChooseRandomStreetView()).toJSON(),
+          map_position: (await maps.aChooseRandomStreetView()).toJSON(),
         };
       }
 

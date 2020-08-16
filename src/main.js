@@ -4,6 +4,7 @@ import App from '@/App.vue';
 import router from '@/router';
 import vuetify from '@/plugins/vuetify';
 import { newStore } from '@/store';
+import maps from '@/maps_util.js';
 
 Vue.config.productionTip = false;
 
@@ -36,6 +37,8 @@ firebase.database.enableLogging(process.env.NODE_ENV !== 'production');
 if (process.env.NODE_ENV === 'production') {
   firebase.analytics();
 }
+
+maps.init();
 
 new Vue({
   router,

@@ -9,7 +9,7 @@
 
 <script>
 /*global google*/
-import { chooseRandomPointOnSphere } from '@/util.js';
+import maps from '@/maps_util.js';
 
 export default {
   props: {},
@@ -45,7 +45,7 @@ export default {
     },
     mathdebug: function() {
       for (let i = 0; i < 100; i++) {
-        const pos = chooseRandomPointOnSphere();
+        const pos = maps.chooseRandomPointOnSphere();
         console.log(pos.toJSON());
         new google.maps.Marker({
           position: pos,
