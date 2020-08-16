@@ -7,6 +7,7 @@
       <button v-on:click="nextround()">Next round!</button>
     </template>
     <p>Round {{ round }}</p>
+    <RoundStatus v-bind:players="players" v-bind:guesses="guesses" v-bind:mapPosition="mapPosition" />
     <Streets v-bind:mapPosition="mapPosition" />
     <MarkerMap @on-guess="guess($event)" />
   </div>
@@ -20,6 +21,7 @@ import 'firebase/database';
 // This is the main view for the actual game.
 import Streets from '@/components/Streets.vue';
 import MarkerMap from '@/components/MarkerMap.vue';
+import RoundStatus from '@/components/RoundStatus.vue';
 import { chooseRandomStreetView, haversine_distance } from '@/util.js';
 
 var roomState = {};
@@ -29,12 +31,15 @@ export default {
   components: {
     Streets,
     MarkerMap,
+    RoundStatus,
   },
   data: function() {
     return {
       mapPosition: new google.maps.LatLng(37.75598, -122.41231),
       round: 0,
       roomState: {},
+      guesses: {},
+      players: {},
     };
   },
   mounted: function() {
@@ -44,6 +49,15 @@ export default {
       roomState = snapshot.val();
       this.round = roomState.current_round;
       this.mapPosition = roomState.rounds[this.round].map_position;
+
+      this.guesses = roomState.rounds[this.round].guesses;
+      if (! this.guesses) {
+        this.guesses = [];
+      }
+      if (! this.players) {
+        this.players = [];
+      }
+      this.players = roomState.players;
     }
     firebase
       .database()
