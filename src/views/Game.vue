@@ -7,7 +7,12 @@
       <button v-on:click="nextround()">Next round!</button>
     </template>
     <p>Round {{ round }}</p>
-    <RoundStatus v-bind:players="players" v-bind:guesses="guesses" v-bind:mapPosition="mapPosition" />
+    <Leaderboard v-bind:players="players" v-bind:roundSummaries="roundSummaries" />
+    <RoundStatus
+      v-bind:players="players"
+      v-bind:guesses="guesses"
+      v-bind:mapPosition="mapPosition"
+    />
     <Streets v-bind:mapPosition="mapPosition" />
     <MarkerMap @on-guess="guess($event)" />
   </div>
@@ -22,6 +27,7 @@ import 'firebase/database';
 import Streets from '@/components/Streets.vue';
 import MarkerMap from '@/components/MarkerMap.vue';
 import RoundStatus from '@/components/RoundStatus.vue';
+import Leaderboard from '@/components/Leaderboard.vue';
 import maps from '@/maps_util.js';
 
 var roomState = {};
@@ -32,6 +38,7 @@ export default {
     Streets,
     MarkerMap,
     RoundStatus,
+    Leaderboard,
   },
   data: function() {
     return {
@@ -40,12 +47,13 @@ export default {
       roomState: {},
       guesses: {},
       players: {},
+      roundSummaries: {},
     };
   },
   mounted: function() {
     const roomId = this.$route.params.roomId;
     function cb(snapshot) {
-      console.log(snapshot.val());
+      console.log("Game Snapshot changed:", snapshot.val());
       roomState = snapshot.val();
       this.round = roomState.current_round;
       this.mapPosition = roomState.rounds[this.round].map_position;
@@ -58,6 +66,22 @@ export default {
         this.players = [];
       }
       this.players = roomState.players;
+      const summaries = {};
+      for (const player_uuid in roomState.players)   {
+        summaries[player_uuid] = {};
+        for (const round_id in roomState.rounds) {
+          summaries[player_uuid][round_id] = 0;
+        }
+      }
+      
+      for (const round_id in roomState.rounds) {
+        const round = roomState.rounds[round_id];
+        const summary = maps.score(round.summary || {});
+        for (const player_uuid in summary) {
+          summaries[player_uuid][round_id] = summary[player_uuid];
+        }
+      }
+      this.roundSummaries = summaries;
     }
     firebase
       .database()

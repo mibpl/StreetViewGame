@@ -42,7 +42,6 @@ export default {
           guess: this.guesses[key],
         });
       }
-      console.log(arr);
       return arr;
     },
     all_guessed: function() {
@@ -78,8 +77,6 @@ export default {
   },
   watch: {
     player_ready_list: function() {
-      // this.all_guessed = true;
-      console.log('guesses change', this.player_ready_list);
       this.wipeMarkers();
       this.mountMap();
 
@@ -99,7 +96,6 @@ export default {
             e.guess.latLng.lat,
             e.guess.latLng.lng,
           );
-          console.log('ins-m', pos);
           const m = new google.maps.Marker({
             position: pos,
             map: this.map,
@@ -111,19 +107,12 @@ export default {
             map: this.map,
           });
           this.markers.push(line);
-          console.log('m', m);
           this.markers.push(m);
         }
       }
     },
   },
   mounted: function() {
-    console.log('foo!');
-    for (var i in this.players) {
-      console.log(i);
-    }
-    console.log(this.players);
-    console.log(this.guesses);
   },
 };
 </script>

@@ -46,7 +46,6 @@ export default {
     mathdebug: function() {
       for (let i = 0; i < 100; i++) {
         const pos = maps.chooseRandomPointOnSphere();
-        console.log(pos.toJSON());
         new google.maps.Marker({
           position: pos,
           map: this.map,
