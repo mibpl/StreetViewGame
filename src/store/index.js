@@ -27,6 +27,10 @@ export function newStore() {
         text: '',
         confirmAction: null,
       },
+      persistentDialog: {
+        visible: false,
+        text: '',
+      },
     },
     mutations: {
       setUsername(state, username) {
@@ -36,6 +40,7 @@ export function newStore() {
       setUid(state, uid) {
         state.uid = uid;
       },
+      // Functions related to dialog.
       setDialogVisibility(state, visible) {
         state.dialog.visible = visible;
       },
@@ -44,6 +49,14 @@ export function newStore() {
         state.dialog.text = options.text || '';
         state.dialog.confirmAction = options.confirmAction || null;
         state.dialog.visible = true;
+      },
+      // Functions related to persistent dialog.
+      showPersistentDialog(state, options) {
+        state.persistentDialog.text = options.text || '';
+        state.persistentDialog.visible = true;
+      },
+      hidePersistentDialog(state) {
+        state.persistentDialog.visible = false;
       },
     },
     actions: {},

@@ -35,6 +35,9 @@
       <v-col cols="2">
         <Dialog />
       </v-col>
+      <v-col cols="2">
+        <PersistentDialog />
+      </v-col>
     </v-row>
   </v-container>
 </template>
@@ -45,6 +48,7 @@
 //  * join link is clicked
 // In the latter situation, also the Play button becomes active.
 import Dialog from '@/components/Dialog';
+import PersistentDialog from '@/components/PersistentDialog';
 import * as firebase from 'firebase/app';
 import 'firebase/database';
 import { trySignIn } from '@/store';
@@ -57,6 +61,7 @@ export default {
   name: 'Main',
   components: {
     Dialog,
+    PersistentDialog,
   },
   computed: {
     username: {
@@ -214,7 +219,7 @@ export default {
         );
       });
     },
-    ...mapMutations(['showDialog']),
+    ...mapMutations(['showDialog', 'showPersistentDialog']),
   },
 };
 </script>
