@@ -103,7 +103,10 @@ export default {
             position: pos,
             map: this.map,
             title: e.player_uuid,
-            label: e.player_name + " " + this.summary[e.player_uuid].distance.toFixed(2),
+            label:
+              e.player_name +
+              ' ' +
+              this.summary[e.player_uuid].distance.toFixed(2),
           });
           var line = new google.maps.Polyline({
             path: [pos, this.mapPosition],
@@ -116,8 +119,8 @@ export default {
     },
   },
   mounted: function() {
-      this.wipeMarkers();
-      this.mountMap();
+    this.wipeMarkers();
+    this.mountMap();
   },
 };
 </script>

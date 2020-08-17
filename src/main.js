@@ -37,21 +37,10 @@ firebase.initializeApp(firebaseConfig);
 firebase.database.enableLogging(process.env.NODE_ENV !== 'production');
 
 if (process.env.NODE_ENV === 'production') {
-  console.log(
-    "init analytics"
-  );
   firebase.analytics();
 }
 
-console.log(
-  "init maps"
-);
-
 maps.init();
-
-console.log(
-  "init done"
-);
 
 new Vue({
   router,

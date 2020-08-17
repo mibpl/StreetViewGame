@@ -12,6 +12,12 @@ handlers:
   - url: /join/.*
     static_files: index.html
     upload: index.html
+  - url: /game/.*
+    static_files: index.html
+    upload: index.html
+  - url: /lobby/.*
+    static_files: index.html
+    upload: index.html
   - url: /(.*)$
     static_files: \1
     upload: (.*)
