@@ -8,6 +8,7 @@
 </template>
 
 <script>
+import maps_util from '../maps_util';
 /*global google*/
 
 export default {
@@ -21,6 +22,10 @@ export default {
       required: true,
     },
     mapPosition: {
+      type: Object,
+      required: true,
+    },
+    summary: {
       type: Object,
       required: true,
     },
@@ -98,7 +103,7 @@ export default {
             position: pos,
             map: this.map,
             title: e.player_uuid,
-            label: e.player_name,
+            label: e.player_name + " " + this.summary[e.player_uuid].distance.toFixed(2),
           });
           var line = new google.maps.Polyline({
             path: [pos, this.mapPosition],

@@ -5,7 +5,6 @@
 </template>
 
 <style scoped>
-
 #street-view-container {
   width: 100%;
   height: 100%;
@@ -18,15 +17,18 @@
 #street-view-anchor {
   flex-grow: 1;
 }
-
 </style>
 
 <script>
 /*global google*/
+import Vue from 'vue';
+
+const DEFAULT_POV = { heading: -110, pitch: 0 };
+
 export default {
   props: {
     mapPosition: {
-      type: google.maps.LatLng,
+      type: Object,
       required: true,
     },
   },
@@ -34,29 +36,30 @@ export default {
     return {};
   },
   name: 'Streets',
-  methods: {
-    refreshView: function() {
-      this.panorama = new google.maps.StreetViewPanorama(
-        document.getElementById('street-view-anchor'),
-        {
-          position: this.mapPosition,
-          pov: { heading: -110, pitch: 0 },
-          zoom: 1,
-          addressControl: false,
-          clickToGo: true,
-          fullscreenControl: false,
-          imageDateControl: false,
-          linksControl: false,
-          showRoadLabels: false,
-        },
-      );
-    },
-  },
+  methods: {},
   mounted: function() {
-    this.refreshView();
+    this.panorama = new google.maps.StreetViewPanorama(
+      document.getElementById('street-view-anchor'),
+      {
+        position: this.mapPosition,
+        pov: DEFAULT_POV,
+        zoom: 1,
+        addressControl: false,
+        clickToGo: true,
+        fullscreenControl: false,
+        imageDateControl: false,
+        linksControl: false,
+        showRoadLabels: false,
+      },
+    );
   },
-  updated: function() {
-    this.refreshView();
+  watch: {
+    mapPosition: function() {
+      this.$nextTick(function() {
+        this.panorama.setPosition(this.mapPosition);
+        this.panorama.setPov(DEFAULT_POV);
+      });
+    },
   },
 };
 </script>

@@ -1,8 +1,8 @@
 <template>
   <div id="marker-map-container">
     <div id="map-anchor" />
-    <button v-on:click="guess()">Make a guess</button>
-    <button v-on:click="mathdebug()">Do some math!</button>
+    <button variant="light" v-on:click="guess()">Make a guess</button>
+    <!-- <button v-on:click="mathdebug()">Do some math!</button> !-->
   </div>
 </template>
 

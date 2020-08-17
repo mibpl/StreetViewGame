@@ -1,15 +1,15 @@
 <template>
   <div>
-    <v-overlay v-show="everyoneGuessed()" absolute="true">
+    <v-overlay v-show="everyoneGuessed()">
       <template v-if="isChief()">
         <button v-on:click="nextround()">Next round!</button>
       </template>
-      <p>Round {{ round }}</p>
       <Leaderboard v-bind:players="players" v-bind:roundSummaries="roundSummaries" />
       <RoundStatus
         v-bind:players="players"
         v-bind:guesses="guesses"
         v-bind:mapPosition="mapPosition"
+        v-bind:summary="currentSummary"
       />
     </v-overlay>
     <Streets v-bind:mapPosition="mapPosition" />
@@ -66,40 +66,40 @@ export default {
   },
   data: function() {
     return {
-      mapPosition: new google.maps.LatLng(37.75598, -122.41231),
+      mapPosition: { lat: 37.75598, lng: -122.41231 },
       round: 0,
       roomState: {},
       guesses: {},
       players: {},
       roundSummaries: {},
-      currentChief: "",
-
+      currentChief: '',
+      currentSummary: {},
     };
   },
   mounted: function() {
     const roomId = this.$route.params.roomId;
     function cb(snapshot) {
-      console.log("Game Snapshot changed:", snapshot.val());
+      console.log('Game Snapshot changed:', snapshot.val());
       roomState = snapshot.val();
       this.round = roomState.current_round;
       this.mapPosition = roomState.rounds[this.round].map_position;
-
+      this.currentSummary = roomState.rounds[this.round].summary;
       this.guesses = roomState.rounds[this.round].guesses;
-      if (! this.guesses) {
+      if (!this.guesses) {
         this.guesses = [];
       }
-      if (! this.players) {
+      if (!this.players) {
         this.players = [];
       }
       this.players = roomState.players;
       const summaries = {};
-      for (const player_uuid in roomState.players)   {
+      for (const player_uuid in roomState.players) {
         summaries[player_uuid] = {};
         for (const round_id in roomState.rounds) {
           summaries[player_uuid][round_id] = 0;
         }
       }
-      
+
       for (const round_id in roomState.rounds) {
         const round = roomState.rounds[round_id];
         const summary = maps.score(round.summary || {});
@@ -128,12 +128,25 @@ export default {
         .set({
           latLng: event.latLng,
         });
+
+      const distance = {
+        distance: maps.haversine_distance(this.mapPosition, event.latLng),
+      };
+
+      firebase
+        .database()
+        .ref(process.env.VUE_APP_DB_PREFIX + roomId)
+        .child('rounds')
+        .child(this.round)
+        .child('summary')
+        .child(this.$store.state.uid)
+        .set(distance);
     },
     everyoneGuessed: function() {
-      if (! this.players) return false;
-      if (! this.guesses) return false;
+      if (!this.players) return false;
+      if (!this.guesses) return false;
       for (const player_uuid in this.players) {
-        if (! (player_uuid in this.guesses)) return false;
+        if (!(player_uuid in this.guesses)) return false;
       }
       return true;
     },
@@ -150,22 +163,6 @@ export default {
     nextround() {
       const roomId = this.$route.params.roomId;
       const newRound = this.round + 1;
-
-      const summary = {};
-      const guesses = roomState.rounds.[this.round].guesses;
-      for (const [player, guess] of Object.entries(guesses)) {
-        summary[player] = {
-          distance: maps.haversine_distance(this.mapPosition, guess.latLng)
-        }
-      }
-
-      firebase
-        .database()
-        .ref(process.env.VUE_APP_DB_PREFIX + roomId)
-        .child('rounds')
-        .child(this.round)
-        .child('summary')
-        .set(summary);
 
       firebase
         .database()
