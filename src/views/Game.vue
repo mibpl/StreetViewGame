@@ -48,6 +48,8 @@ export default {
       guesses: {},
       players: {},
       roundSummaries: {},
+      currentChief: "",
+
     };
   },
   mounted: function() {
@@ -82,6 +84,7 @@ export default {
         }
       }
       this.roundSummaries = summaries;
+      this.currentChief = roomState.chief;
     }
     firebase
       .database()
@@ -110,7 +113,7 @@ export default {
       maps.chooseRandomStreetView(cb.bind(this));
     },
     isChief() {
-      return true;
+      return this.$store.state.uid == this.currentChief;
     },
     nextround() {
       const roomId = this.$route.params.roomId;
