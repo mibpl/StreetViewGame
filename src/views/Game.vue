@@ -1,24 +1,46 @@
 <template>
   <div>
-    <span>Game view</span>
-    <p v-if="everyoneGuessed()">All guesses ready</p>
-    <template v-if="isChief()">
-      <h1>Room leader section</h1>
-      <button v-on:click="jumpdebug()">Jump!</button>
-      <button v-on:click="nextround()">Next round!</button>
-      <button v-on:click="nextround()">Next round!</button>
-    </template>
-    <p>Round {{ round }}</p>
-    <Leaderboard v-bind:players="players" v-bind:roundSummaries="roundSummaries" />
-    <RoundStatus
-      v-bind:players="players"
-      v-bind:guesses="guesses"
-      v-bind:mapPosition="mapPosition"
-    />
+    <v-overlay v-show="everyoneGuessed()" absolute="true">
+      <template v-if="isChief()">
+        <button v-on:click="nextround()">Next round!</button>
+      </template>
+      <p>Round {{ round }}</p>
+      <Leaderboard v-bind:players="players" v-bind:roundSummaries="roundSummaries" />
+      <RoundStatus
+        v-bind:players="players"
+        v-bind:guesses="guesses"
+        v-bind:mapPosition="mapPosition"
+      />
+    </v-overlay>
     <Streets v-bind:mapPosition="mapPosition" />
-    <MarkerMap @on-guess="guess($event)" />
+    <div id="map-overlay">
+      <MarkerMap @on-guess="guess($event)" />
+    </div>
   </div>
 </template>
+
+<style scoped>
+#map-overlay {
+  position: absolute;
+  width: 400px;
+  height: 200px;
+  left: 0;
+
+  bottom: 0;
+  background-color: rgba(145, 10, 172, 0.5);
+  z-index: 2;
+  cursor: pointer;
+  display: block;
+  scale: 0.5;
+
+  transition: all 0.2s ease-in-out;
+}
+
+#map-overlay:hover {
+  width: 90%;
+  height: 90%;
+}
+</style>
 
 <script>
 /*global google*/

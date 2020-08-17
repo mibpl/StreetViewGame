@@ -1,11 +1,29 @@
 <template>
-  <div style="width: 800px; height: 800px">
-    <p style="text-decoration: underline">Baaa!</p>
-    <div id="map-anchor" style="width: 800px'; height: 800px" />
+  <div id="marker-map-container">
+    <div id="map-anchor" />
     <button v-on:click="guess()">Make a guess</button>
     <button v-on:click="mathdebug()">Do some math!</button>
   </div>
 </template>
+
+<style scoped>
+
+#marker-map-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+}
+
+#map-anchor {
+  flex-grow: 1;
+}
+
+</style>
 
 <script>
 /*global google*/

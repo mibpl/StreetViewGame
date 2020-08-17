@@ -1,17 +1,15 @@
 <template>
   <div>
-    <p style="text-decoration: underline">Round summary!</p>
-    <ul id="round-status-list">
-      <li v-for="e in player_ready_list" v-bind:key="e.player_uuid">
-        <p>{{ e.player_name }}: {{ e.has_guess }}</p>
-      </li>
-    </ul>
-    <div style="width: 800px; height: 800px" id="round-summary-map-anchor" />
+    <div
+      style="width: 800px; height: 800px; position: fixed; left: 0; right: 0;"
+      id="round-summary-map-anchor"
+    />
   </div>
 </template>
 
 <script>
 /*global google*/
+
 export default {
   props: {
     players: {
@@ -113,6 +111,8 @@ export default {
     },
   },
   mounted: function() {
+      this.wipeMarkers();
+      this.mountMap();
   },
 };
 </script>
