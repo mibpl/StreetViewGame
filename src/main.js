@@ -1,5 +1,7 @@
 import Vue from 'vue';
 import * as firebase from 'firebase/app';
+import 'firebase/analytics';
+import 'firebase/auth'
 import App from '@/App.vue';
 import router from '@/router';
 import vuetify from '@/plugins/vuetify';
@@ -9,7 +11,7 @@ import maps from '@/maps_util.js';
 Vue.config.productionTip = false;
 
 let firebaseConfig;
-console.log(process.env);
+console.log(process.env.VUE_APP_DB_ENV);
 if (process.env.VUE_APP_DB_ENV === 'production') {
   firebaseConfig = {
     apiKey: process.env.VUE_APP_FIREBASE_API_KEY,
@@ -35,10 +37,21 @@ firebase.initializeApp(firebaseConfig);
 firebase.database.enableLogging(process.env.NODE_ENV !== 'production');
 
 if (process.env.NODE_ENV === 'production') {
+  console.log(
+    "init analytics"
+  );
   firebase.analytics();
 }
 
+console.log(
+  "init maps"
+);
+
 maps.init();
+
+console.log(
+  "init done"
+);
 
 new Vue({
   router,
