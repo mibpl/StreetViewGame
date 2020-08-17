@@ -1,9 +1,11 @@
 <template>
   <div>
     <span>Game view</span>
+    <p v-if="everyoneGuessed()">All guesses ready</p>
     <template v-if="isChief()">
       <h1>Room leader section</h1>
       <button v-on:click="jumpdebug()">Jump!</button>
+      <button v-on:click="nextround()">Next round!</button>
       <button v-on:click="nextround()">Next round!</button>
     </template>
     <p>Round {{ round }}</p>
@@ -104,6 +106,14 @@ export default {
         .set({
           latLng: event.latLng,
         });
+    },
+    everyoneGuessed: function() {
+      if (! this.players) return false;
+      if (! this.guesses) return false;
+      for (const player_uuid in this.players) {
+        if (! (player_uuid in this.guesses)) return false;
+      }
+      return true;
     },
     jumpdebug: function() {
       function cb(pos) {
