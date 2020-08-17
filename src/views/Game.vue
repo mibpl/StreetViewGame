@@ -82,7 +82,10 @@ export default {
       console.log('Game Snapshot changed:', snapshot.val());
       roomState = snapshot.val();
       this.round = roomState.current_round;
+
+
       this.mapPosition = roomState.rounds[this.round].map_position;
+
       this.currentSummary = roomState.rounds[this.round].summary;
       this.guesses = roomState.rounds[this.round].guesses;
       if (!this.guesses) {

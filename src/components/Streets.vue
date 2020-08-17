@@ -54,11 +54,14 @@ export default {
     );
   },
   watch: {
-    mapPosition: function() {
-      this.$nextTick(function() {
-        this.panorama.setPosition(this.mapPosition);
-        this.panorama.setPov(DEFAULT_POV);
-      });
+    mapPosition: function(newValue, oldValue) {
+      // this is stupid, why do I even bother...
+      if (JSON.stringify(oldValue) != JSON.stringify(newValue)) {
+        this.$nextTick(function() {
+          this.panorama.setPosition(this.mapPosition);
+          this.panorama.setPov(DEFAULT_POV);
+        });
+      }
     },
   },
 };
