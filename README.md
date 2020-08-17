@@ -2,6 +2,10 @@
 
 Trying to rewrite Geoguess from ground up, but still in Vue.
 
+## To run on Cloud Build:
+
+gcloud builds submit --config cloudbuild.yaml --async
+
 ## Project setup
 ```
 npm install
