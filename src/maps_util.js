@@ -71,14 +71,14 @@ class GoogleMapsWrapper {
 
   score(unscored_summary) {
     const scores = {};
-    const max_score = 10000;
+    const max_score = 100;
     for (const player in unscored_summary) {
       const d = unscored_summary[player].distance;
       let r = 0;
-      if (d < 100) {
+      if (d < 0.5) {
         scores[player] = max_score;
       } else {
-        r = max_score - 10.0 - d;
+        r = max_score - Math.sqrt(d);
       }
 
       if (r < 0) r = 0;
