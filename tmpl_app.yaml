@@ -1,0 +1,17 @@
+# This should be copied to dist/ directory before use.
+# npm run build takes care of that.
+
+runtime: nodejs12
+
+instance_class: F1
+
+handlers:
+  - url: /
+    static_files: index.html
+    upload: index.html
+  - url: /join/.*
+    static_files: index.html
+    upload: index.html
+  - url: /(.*)$
+    static_files: \1
+    upload: (.*)
