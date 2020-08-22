@@ -76,7 +76,7 @@ class GoogleMapsWrapper {
       const d = unscored_summary[player].distance;
       let r = 0;
       if (d < 0.5) {
-        scores[player] = max_score;
+        r = max_score;
       } else {
         r = max_score - Math.sqrt(d);
       }
