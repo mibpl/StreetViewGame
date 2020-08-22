@@ -1,7 +1,8 @@
 import Vue from 'vue';
 import * as firebase from 'firebase/app';
 import 'firebase/analytics';
-import 'firebase/auth'
+import 'firebase/auth';
+import VueClipboard from 'vue-clipboard2';
 import App from '@/App.vue';
 import router from '@/router';
 import vuetify from '@/plugins/vuetify';
@@ -9,6 +10,8 @@ import { newStore } from '@/store';
 import maps from '@/maps_util.js';
 
 Vue.config.productionTip = false;
+
+Vue.use(VueClipboard);
 
 let firebaseConfig;
 console.log(process.env.VUE_APP_DB_ENV);

@@ -2,6 +2,16 @@
   <v-container class="fill-height" fluid>
     <v-row align="center" justify="center">
       <v-col cols="5">
+        <v-card outlined align="center" justify="center">
+          <v-card-text>
+            <div>
+              Join link: {{ joinLink }}
+              <v-btn icon v-clipboard:copy="joinLink">
+                <v-icon>mdi-content-copy</v-icon>
+              </v-btn>
+            </div>
+          </v-card-text>
+        </v-card>
         <v-card outlined>
           <v-card-text v-if="connected_players_names.length == 0">
             <div>No one has joined yet...</div>
@@ -101,6 +111,9 @@ export default {
     },
     chiefName: function() {
       return this.connected_players[this.chief];
+    },
+    joinLink: function() {
+      return `${window.location.origin}/join/${this.roomId}`;
     },
   },
   created: function() {
