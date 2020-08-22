@@ -1,16 +1,25 @@
 <template>
   <div>
     <v-overlay v-show="everyoneGuessed()">
-      <template v-if="isChief()">
-        <button v-on:click="nextround()">Next round!</button>
-      </template>
-      <Leaderboard v-bind:players="players" v-bind:roundSummaries="roundSummaries" />
-      <RoundStatus
-        v-bind:players="players"
-        v-bind:guesses="guesses"
-        v-bind:mapPosition="mapPosition"
-        v-bind:summary="currentSummary"
-      />
+      <v-card light>
+        <Leaderboard
+          v-bind:players="players"
+          v-bind:roundSummaries="roundSummaries"
+          v-bind:roundsSize="roundsSize"
+        />
+        <RoundStatus
+          v-bind:players="players"
+          v-bind:guesses="guesses"
+          v-bind:mapPosition="mapPosition"
+          v-bind:summary="currentSummary"
+        />
+        <v-card-actions v-if="isChief()">
+          <v-spacer></v-spacer>
+          <v-btn tile dark color="red" v-on:click="nextround()">
+            Next round!
+          </v-btn>
+        </v-card-actions>
+      </v-card>
     </v-overlay>
     <Streets v-bind:mapPosition="mapPosition" />
     <div id="map-overlay">
@@ -72,6 +81,7 @@ export default {
       guesses: {},
       players: {},
       roundSummaries: {},
+      roundsSize: 0,
       currentChief: '',
       currentSummary: {},
     };
@@ -111,6 +121,7 @@ export default {
         }
       }
       this.roundSummaries = summaries;
+      this.roundsSize = roomState.rounds.length;
       this.currentChief = roomState.chief;
     }
     firebase

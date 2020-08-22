@@ -1,26 +1,47 @@
 <template>
-  <div>
-    <p style="text-decoration: underline">Leaderboard</p>
-    <table>
-      <tr v-for="(player, player_uuid) in players">
-        <td>{{player.username}}</td>
-        <td
-          v-for="round_id in Object.keys(roundSummaries[player_uuid]).sort()"
-        >{{roundSummaries[player_uuid][round_id].toFixed(2)}}</td>
-        <td>
-          <b>{{ totalScore[player_uuid].toFixed(2) }}</b>
-        </td>
-      </tr>
-    </table>
-  </div>
+  <v-container>
+    <v-card-title>
+      Leaderboard
+    </v-card-title>
+    <v-card-text>
+      <v-simple-table dense>
+        <thead>
+          <tr>
+            <th class="text-left">Player</th>
+            <th class="text-left" v-for="i in roundsSize" v-bind:key="i">
+              Round {{ i }}
+            </th>
+            <th class="text-left">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="{ username, summaries, total } in sortedResults"
+            :key="username"
+          >
+            <td>{{ username }}</td>
+            <td v-for="(_, round_id) in roundsSize" :key="round_id">
+              {{ summaries[round_id].toFixed(2) }}
+            </td>
+            <td>
+              <b>{{ total.toFixed(2) }}</b>
+            </td>
+          </tr>
+        </tbody>
+      </v-simple-table>
+    </v-card-text>
+  </v-container>
 </template>
 
 <script>
-/*global google*/
 export default {
   props: {
     roundSummaries: {
       type: Object,
+      required: true,
+    },
+    roundsSize: {
+      type: Number,
       required: true,
     },
     players: {
@@ -32,15 +53,24 @@ export default {
     return {};
   },
   computed: {
-    totalScore: function() {
-      const totalScore = {};
-      for (const player_uuid in this.roundSummaries) {
-        totalScore[player_uuid] = 0;
-        for (const round_id in this.roundSummaries[player_uuid]) {
-          totalScore[player_uuid] += this.roundSummaries[player_uuid][round_id];
-        }
+    sortedResults: function() {
+      let results = [];
+      for (const player_uuid in this.players) {
+        const username = this.players[player_uuid].username;
+        const total = Object.values(this.roundSummaries[player_uuid]).reduce(
+          (a, b) => a + b,
+          0,
+        );
+        results.push({
+          username,
+          summaries: this.roundSummaries[player_uuid],
+          total,
+        });
       }
-      return totalScore;
+      results.sort(function(a, b) {
+        return b.total - a.total;
+      });
+      return results;
     },
   },
   name: 'Leaderboard',

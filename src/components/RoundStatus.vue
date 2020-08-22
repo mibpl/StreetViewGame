@@ -1,14 +1,13 @@
 <template>
-  <div>
+  <v-card-text>
     <div
       style="width: 800px; height: 800px; position: fixed; left: 0; right: 0;"
       id="round-summary-map-anchor"
     />
-  </div>
+  </v-card-text>
 </template>
 
 <script>
-import maps_util from '../maps_util';
 /*global google*/
 
 export default {
