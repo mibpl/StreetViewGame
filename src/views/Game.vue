@@ -92,10 +92,7 @@ export default {
       console.log('Game Snapshot changed:', snapshot.val());
       roomState = snapshot.val();
       this.round = roomState.current_round;
-
-
       this.mapPosition = roomState.rounds[this.round].map_position;
-
       this.currentSummary = roomState.rounds[this.round].summary;
       this.guesses = roomState.rounds[this.round].guesses;
       if (!this.guesses) {
@@ -105,6 +102,7 @@ export default {
         this.players = [];
       }
       this.players = roomState.players;
+
       const summaries = {};
       for (const player_uuid in roomState.players) {
         summaries[player_uuid] = {};
@@ -117,9 +115,12 @@ export default {
         const round = roomState.rounds[round_id];
         const summary = maps.score(round.summary || {});
         for (const player_uuid in summary) {
-          summaries[player_uuid][round_id] = summary[player_uuid];
+          if (player_uuid in this.players) {
+            summaries[player_uuid][round_id] = summary[player_uuid];
+          }
         }
       }
+
       this.roundSummaries = summaries;
       this.roundsSize = roomState.rounds.length;
       this.currentChief = roomState.chief;
