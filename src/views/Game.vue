@@ -15,9 +15,7 @@
         />
         <v-card-actions v-if="isChief()">
           <v-spacer></v-spacer>
-          <v-btn tile dark color="red" v-on:click="nextround()">
-            Next round!
-          </v-btn>
+          <v-btn v-if="isNotLastRound()" tile dark color="red" v-on:click="nextround()">Next round!</v-btn>
         </v-card-actions>
       </v-card>
     </v-overlay>
@@ -184,6 +182,9 @@ export default {
         .ref(process.env.VUE_APP_DB_PREFIX + roomId)
         .child('current_round')
         .set(newRound);
+    },
+    isNotLastRound() {
+      return this.round < this.roundsSize - 1;
     },
   },
 };
