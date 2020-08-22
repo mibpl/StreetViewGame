@@ -1,9 +1,16 @@
 steps:
  - name: node
+   id: Install project dependencies
    entrypoint: npm
    args: ["install"]
  - name: node
+   id: Run unit tests
+   entrypoint: npm
+   args: ["run", "test:unit"]
+ - name: node
+   id: Build production code
    entrypoint: npm
    args: ["run", "build"]
  - name: "gcr.io/cloud-builders/gcloud"
+   id: Deploy
    args: ["app", "deploy", "dist/"]
