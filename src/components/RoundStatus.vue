@@ -102,11 +102,12 @@ export default {
             position: pos,
             map: this.map,
             title: e.player_uuid,
-            label:
-              e.player_name +
-              ' ' +
-              this.summary[e.player_uuid].distance.toFixed(2),
           });
+          const distance = this.summary[e.player_uuid].distance.toFixed(2);
+          const info = new google.maps.InfoWindow({
+            content: `${e.player_name}: ${distance} km`,
+          });
+          info.open(this.map, m);
           var line = new google.maps.Polyline({
             path: [pos, this.mapPosition],
             map: this.map,
