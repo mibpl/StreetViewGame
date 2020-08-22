@@ -174,7 +174,6 @@ export default {
         }
         this.connected_players = Object.fromEntries(
           Object.entries(playersSnapshot.val())
-            .filter(entry => entry[1].connected)
             .map(entry => [entry[0], entry[1].username]),
         );
       });

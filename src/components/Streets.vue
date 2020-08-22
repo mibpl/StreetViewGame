@@ -1,6 +1,6 @@
 <template>
   <div id="street-view-container">
-    <div id="street-view-anchor" style="width: 600px'; height: 600px" />
+    <div id="street-view-anchor" />
   </div>
 </template>
 
@@ -11,7 +11,7 @@
   display: flex;
   flex-direction: column;
   flex-wrap: nowrap;
-  position: absolute;
+
 }
 
 #street-view-anchor {

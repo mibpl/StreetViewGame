@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div id="game-view-container">
     <v-overlay v-show="everyoneGuessed()">
       <v-card light>
         <Leaderboard
@@ -19,6 +19,11 @@
         </v-card-actions>
       </v-card>
     </v-overlay>
+    <PlayerList
+      @on-kick-player="kickPlayer($event)"
+      v-bind:playerGuessStatus="players"
+      v-bind:isChief="isChief()"
+    />
     <Streets v-bind:mapPosition="mapPosition" />
     <div id="map-overlay">
       <MarkerMap @on-guess="guess($event)" />
@@ -27,6 +32,15 @@
 </template>
 
 <style scoped>
+#game-view-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  position: absolute;
+}
+
 #map-overlay {
   position: absolute;
   width: 400px;
@@ -50,7 +64,6 @@
 </style>
 
 <script>
-/*global google*/
 import * as firebase from 'firebase/app';
 import 'firebase/database';
 
@@ -59,6 +72,7 @@ import Streets from '@/components/Streets.vue';
 import MarkerMap from '@/components/MarkerMap.vue';
 import RoundStatus from '@/components/RoundStatus.vue';
 import Leaderboard from '@/components/Leaderboard.vue';
+import PlayerList from '@/components/PlayerList.vue';
 import maps from '@/maps_util.js';
 
 var roomState = {};
@@ -70,6 +84,7 @@ export default {
     MarkerMap,
     RoundStatus,
     Leaderboard,
+    PlayerList,
   },
   data: function() {
     return {
@@ -99,7 +114,13 @@ export default {
       if (!this.players) {
         this.players = [];
       }
+
       this.players = roomState.players;
+
+      for (const player_uuid in this.players) {
+        this.players[player_uuid].guessedThisRound =
+          player_uuid in this.guesses;
+      }
 
       const summaries = {};
       for (const player_uuid in roomState.players) {
@@ -185,6 +206,16 @@ export default {
     },
     isNotLastRound() {
       return this.round < this.roundsSize - 1;
+    },
+    kickPlayer(event) {
+      const player_uuid = event.player_uuid;
+      const roomId = this.$route.params.roomId;
+      firebase
+        .database()
+        .ref(process.env.VUE_APP_DB_PREFIX + roomId)
+        .child('players')
+        .child(player_uuid)
+        .remove();
     },
   },
 };

@@ -117,13 +117,6 @@ export default {
         };
       }
 
-      // Yes, this might potentially result in having a room with nothing else
-      // but just this disconnected player. Pretty unlikely and no big deal.
-      let playerConnectedRef = firebase
-        .database()
-        .ref(`${roomObjectName}/players/${uid}/connected`);
-      playerConnectedRef.onDisconnect().set(false);
-
       let roomRef = firebase.database().ref(roomObjectName);
       let roomObject = {
         chief: uid,
@@ -135,7 +128,6 @@ export default {
       };
       roomObject.players[uid] = {
         username: username,
-        connected: true,
       };
       roomRef.set(roomObject, error => {
         if (error) {
@@ -196,13 +188,10 @@ export default {
           });
           return;
         }
-        let playerConnectedRef = roomRef.child(`players/${uid}/connected`);
-        playerConnectedRef.onDisconnect().set(false);
 
         roomRef.child(`players/${uid}`).set(
           {
             username: username,
-            connected: true,
           },
           error => {
             if (error) {
