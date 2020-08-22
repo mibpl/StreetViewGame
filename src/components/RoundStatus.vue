@@ -9,6 +9,7 @@
 
 <script>
 /*global google*/
+import sanitizeHtml from 'sanitize-html';
 
 export default {
   props: {
@@ -103,9 +104,14 @@ export default {
             map: this.map,
             title: e.player_uuid,
           });
+          const sanitizedUsername = sanitizeHtml(e.player_name, {
+            allowedTags: [],
+            allowedAttributes: {},
+            disallowedTagsMode: 'recursiveEscape',
+          });
           const distance = this.summary[e.player_uuid].distance.toFixed(2);
           const info = new google.maps.InfoWindow({
-            content: `${e.player_name}: ${distance} km`,
+            content: `${sanitizedUsername}: ${distance} km`,
           });
           info.open(this.map, m);
           var line = new google.maps.Polyline({
