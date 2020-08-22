@@ -1,7 +1,7 @@
 <template>
   <div id="marker-map-container">
     <div id="map-anchor" />
-    <button variant="light" v-on:click="guess()">Make a guess</button>
+    <v-btn tile color="red" v-on:click="guess()" dark>Make a guess</v-btn>
     <!-- <button v-on:click="mathdebug()">Do some math!</button> !-->
   </div>
 </template>
