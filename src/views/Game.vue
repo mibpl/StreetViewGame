@@ -26,7 +26,7 @@
     />
     <Streets v-bind:mapPosition="mapPosition" />
     <div id="map-overlay">
-      <MarkerMap @on-guess="guess($event)" />
+      <MarkerMap @on-guess="guess($event)" v-bind:deadlineTimestamp="deadlineTimestamp" />
     </div>
   </div>
 </template>
@@ -97,6 +97,8 @@ export default {
       roundsSize: 0,
       currentChief: '',
       currentSummary: {},
+      deadlineTimestamp: null,
+      timeLimit: null,
     };
   },
   mounted: function() {
@@ -104,6 +106,9 @@ export default {
     function cb(snapshot) {
       console.log('Game Snapshot changed:', snapshot.val());
       roomState = snapshot.val();
+      this.currentChief = roomState.chief;
+      this.timeLimit = roomState.time_limit || null;
+
       this.round = roomState.current_round;
       this.mapPosition = roomState.rounds[this.round].map_position;
       this.currentSummary = roomState.rounds[this.round].summary;
@@ -140,9 +145,24 @@ export default {
         }
       }
 
+      this.deadlineTimestamp = roomState.rounds[this.round].deadline || null;
+
+      if (
+        this.deadlineTimestamp == null &&
+        this.timeLimit != null &&
+        this.isChief()
+      ) {
+        firebase
+          .database()
+          .ref(process.env.VUE_APP_DB_PREFIX + roomId)
+          .child('rounds')
+          .child(roomState.current_round)
+          .child('deadline')
+          .set(new Date().getTime() + this.timeLimit * 1000);
+      }
+
       this.roundSummaries = summaries;
       this.roundsSize = roomState.rounds.length;
-      this.currentChief = roomState.chief;
     }
     firebase
       .database()

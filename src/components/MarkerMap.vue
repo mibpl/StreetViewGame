@@ -1,13 +1,14 @@
 <template>
   <div id="marker-map-container">
     <div id="map-anchor" />
-    <v-btn tile color="red" v-on:click="guess()" dark>Make a guess</v-btn>
+    <v-btn tile color="red" v-on:click="guess()" dark
+      >Make a guess ({{ timeLeft.toFixed(0) }}s)</v-btn
+    >
     <!-- <button v-on:click="mathdebug()">Do some math!</button> !-->
   </div>
 </template>
 
 <style scoped>
-
 #marker-map-container {
   width: 100%;
   height: 100%;
@@ -22,7 +23,6 @@
 #map-anchor {
   flex-grow: 1;
 }
-
 </style>
 
 <script>
@@ -30,9 +30,18 @@
 import maps from '@/maps_util.js';
 
 export default {
-  props: {},
+  props: {
+    deadlineTimestamp: {
+      type: Number,
+      required: false,
+    },
+  },
   data: function() {
-    return {};
+    return {
+      timeLeft: 0,
+      lastGuess: {},
+      latch: true,
+    };
   },
   name: 'MarkerMap',
   mounted: function() {
@@ -56,9 +65,24 @@ export default {
         title: 'My guess',
       });
     });
+    this.timerCallback = setInterval(() => {
+      if (this.deadlineTimestamp != null) {
+        const now = new Date().getTime();
+        let timeLeft = this.deadlineTimestamp - now;
+        if (timeLeft < 0) {
+          timeLeft = 0;
+          if (this.latch) this.guess();
+          this.latch = false;
+        } else {
+          this.latch = true;
+        }
+        this.timeLeft = timeLeft / 1000;
+      }
+    }, 1000);
   },
   methods: {
     guess: function() {
+      this.lastGuess = this.marker.position.toJSON();
       this.$emit('on-guess', { latLng: this.marker.position.toJSON() });
     },
     mathdebug: function() {

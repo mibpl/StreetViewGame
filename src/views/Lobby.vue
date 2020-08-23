@@ -26,8 +26,9 @@
             </v-list-item>
           </v-list>
           <v-card-actions v-if="isChief()">
-            <v-spacer />
-            <v-btn v-on:click="startGame" color="primary">Start game</v-btn>
+            <label for="timeLimitInput">Round time limit (sec)</label>
+            <input id="timeLimitInput" v-model.number="timeLimit" :min="1" :max="3600" label="foo" />
+            <v-spacer /><v-btn v-on:click="startGame" color="primary">Start game</v-btn>
           </v-card-actions>
           <v-card-text v-if="!isChief()">
             <div>Waiting for {{ chiefName }} to start the game...</div>
@@ -64,6 +65,7 @@ export default {
       playersDbRef: null,
       chiefDbRef: null,
       startedDbRef: null,
+      timeLimit: 0,
     };
   },
   methods: {
@@ -74,6 +76,10 @@ export default {
     startGame() {
       if (!this.startedDbRef) {
         console.log('Trying to start game before "created"');
+      }
+      if (this.timeLimit > 0) {
+        const roomRef = firebase.database().ref(roomObjectPath(this.roomId));
+        roomRef.child('time_limit').set(this.timeLimit);
       }
       this.startedDbRef.set(true, error => {
         if (error) {
