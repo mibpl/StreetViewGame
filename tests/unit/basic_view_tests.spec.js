@@ -34,7 +34,9 @@ describe('Main View', () => {
   beforeEach(() => {
     jest.spyOn(firebase, 'auth').mockImplementation(() => {
       return {
-        signInAnonymously: jest.fn(() => Promise.resolve()),
+        signInAnonymously: jest.fn(() =>
+          Promise.resolve({ user: { uid: 'testUID' } }),
+        ),
         onAuthStateChanged: jest.fn(),
       };
     });

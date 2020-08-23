@@ -6,16 +6,6 @@ import 'firebase/auth';
 
 Vue.use(Vuex);
 
-export function trySignIn() {
-  firebase
-    .auth()
-    .signInAnonymously()
-    .catch(function(error) {
-      console.log("Couldn't connect to Firebase :(");
-      console.log(error);
-    });
-}
-
 export function newStore() {
   let store = new Vuex.Store({
     state: {
@@ -63,7 +53,6 @@ export function newStore() {
     modules: {},
   });
 
-  trySignIn();
   firebase.auth().onAuthStateChanged(function(user) {
     if (user) {
       let uid = user.uid;

@@ -65,7 +65,7 @@ import { trySignIn } from '@/store';
 import { hri } from 'human-readable-ids';
 import maps from '@/maps_util.js';
 import { mapMutations } from 'vuex';
-import { roomObjectPath } from '@/firebase_utils.js';
+import { roomObjectPath, signUserIn } from '@/firebase_utils.js';
 
 export default {
   name: 'Main',
@@ -218,7 +218,28 @@ export default {
         );
       });
     },
-    ...mapMutations(['showDialog', 'showPersistentDialog']),
+    ...mapMutations([
+      'showDialog',
+      'showPersistentDialog',
+      'hidePersistentDialog',
+    ]),
+  },
+  created: function() {
+    this.showPersistentDialog({
+      text: 'Connecting...',
+    });
+    signUserIn(
+      this.$store,
+      () => {
+        this.hidePersistentDialog();
+      },
+      error => {
+        console.log('Connection error:', error);
+        this.showPersistentDialog({
+          text: 'Unable to connect to Firebase :/ Try refreshing later.',
+        });
+      },
+    );
   },
 };
 </script>

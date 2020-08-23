@@ -48,6 +48,9 @@
       <v-col cols="2">
         <Dialog />
       </v-col>
+      <v-col cols="2">
+        <PersistentDialog />
+      </v-col>
     </v-row>
   </v-container>
 </template>
@@ -60,8 +63,8 @@ import { mapMutations } from 'vuex';
 import * as firebase from 'firebase/app';
 import 'firebase/database';
 import Dialog from '@/components/Dialog';
-import { roomObjectPath } from '@/firebase_utils.js';
-import { trySignIn } from '@/store';
+import PersistentDialog from '@/components/PersistentDialog';
+import { roomObjectPath, signUserIn } from '@/firebase_utils.js';
 
 export default {
   name: 'Lobby',
@@ -114,7 +117,95 @@ export default {
       }
       this.$router.push(location);
     },
-    ...mapMutations(['showDialog']),
+    refreshPage() {
+      if (!this.roomId) {
+        this.$router.push({ name: 'main' });
+      }
+      const uid = this.$store.state.uid;
+
+      const roomRef = firebase.database().ref(roomObjectPath(this.roomId));
+      // Try getting room data from Firebase.
+      roomRef.once('value').then(roomSnapshot => {
+        // The room doesn't exist. Inform user and redirect to main.
+        if (!roomSnapshot.exists()) {
+          this.showDialog({
+            title: "Room doesn't exist",
+            text:
+              "Room you are trying to join doesn't exist. " +
+              'Use correct link or create a new room.',
+            confirmAction: function() {
+              this.cleanUpAndChangeView({ name: 'main' });
+            },
+          });
+          return;
+        }
+        // User has not yet joined. Redirect to relevant join page.
+        if (!roomSnapshot.child(`players/${uid}`).exists()) {
+          this.cleanUpAndChangeView({
+            name: 'join',
+            params: { roomId: this.roomId },
+          });
+          return;
+        }
+
+        // It seems the user actually is in a lobby for this game. Let's display
+        // the relevant info.
+        this.playersDbRef = roomRef.child('players');
+        this.playersDbRef.on('value', playersSnapshot => {
+          if (!playersSnapshot.exists()) {
+            this.showDialog({
+              title: 'The game was deleted',
+              text: 'Try to join another one or create your own',
+              confirmAction: function() {
+                this.cleanUpAndChangeView({ name: 'main' });
+              },
+            });
+          }
+          this.connected_players = Object.fromEntries(
+            Object.entries(playersSnapshot.val()).map(entry => [
+              entry[0],
+              entry[1].username,
+            ]),
+          );
+        });
+        this.chiefDbRef = roomRef.child('chief');
+        this.chiefDbRef.on('value', chiefSnapshot => {
+          if (!chiefSnapshot.exists()) {
+            this.showDialog({
+              title: 'The game was deleted',
+              text: 'Try to join another one or create your own',
+              confirmAction: function() {
+                this.cleanUpAndChangeView({ name: 'main' });
+              },
+            });
+          }
+          this.chief = chiefSnapshot.val();
+        });
+        this.startedDbRef = roomRef.child('started');
+        this.startedDbRef.on('value', startedSnapshot => {
+          if (!startedSnapshot.exists()) {
+            this.showDialog({
+              title: 'The game was deleted',
+              text: 'Try to join another one or create your own',
+              confirmAction: function() {
+                this.cleanUpAndChangeView({ name: 'main' });
+              },
+            });
+          }
+          if (startedSnapshot.val() === true) {
+            this.cleanUpAndChangeView({
+              name: 'game',
+              params: { roomId: this.$route.params.roomId },
+            });
+          }
+        });
+      });
+    },
+    ...mapMutations([
+      'showDialog',
+      'showPersistentDialog',
+      'hidePersistentDialog',
+    ]),
   },
   computed: {
     roomId: function() {
@@ -131,103 +222,25 @@ export default {
     },
   },
   created: function() {
-    if (!this.roomId) {
-      this.$router.push({ name: 'main' });
-    }
-    const uid = this.$store.state.uid;
-    if (uid === null) {
-      trySignIn();
-      this.showDialog({
-        title: 'Connection Error',
-        text:
-          'There was a problem with connection to Firebase :( Try again later.',
-        confirmAction: function() {
-          this.cleanUpAndChangeView({ name: 'main' });
-        },
-      });
-      return;
-    }
-
-    const roomRef = firebase.database().ref(roomObjectPath(this.roomId));
-    // Try getting room data from Firebase.
-    roomRef.once('value').then(roomSnapshot => {
-      // The room doesn't exist. Inform user and redirect to main.
-      if (!roomSnapshot.exists()) {
-        this.showDialog({
-          title: "Room doesn't exist",
-          text:
-            "Room you are trying to join doesn't exist. " +
-            'Use correct link or create a new room.',
-          confirmAction: function() {
-            this.cleanUpAndChangeView({ name: 'main' });
-          },
-        });
-        return;
-      }
-      // User has not yet joined. Redirect to relevant join page.
-      if (!roomSnapshot.child(`players/${uid}`).exists()) {
-        this.cleanUpAndChangeView({
-          name: 'join',
-          params: { roomId: this.roomId },
-        });
-        return;
-      }
-
-      // It seems the user actually is in a lobby for this game. Let's display
-      // the relevant info.
-      this.playersDbRef = roomRef.child('players');
-      this.playersDbRef.on('value', playersSnapshot => {
-        if (!playersSnapshot.exists()) {
-          this.showDialog({
-            title: 'The game was deleted',
-            text: 'Try to join another one or create your own',
-            confirmAction: function() {
-              this.cleanUpAndChangeView({ name: 'main' });
-            },
-          });
-        }
-        this.connected_players = Object.fromEntries(
-          Object.entries(playersSnapshot.val()).map(entry => [
-            entry[0],
-            entry[1].username,
-          ]),
-        );
-      });
-      this.chiefDbRef = roomRef.child('chief');
-      this.chiefDbRef.on('value', chiefSnapshot => {
-        if (!chiefSnapshot.exists()) {
-          this.showDialog({
-            title: 'The game was deleted',
-            text: 'Try to join another one or create your own',
-            confirmAction: function() {
-              this.cleanUpAndChangeView({ name: 'main' });
-            },
-          });
-        }
-        this.chief = chiefSnapshot.val();
-      });
-      this.startedDbRef = roomRef.child('started');
-      this.startedDbRef.on('value', startedSnapshot => {
-        if (!startedSnapshot.exists()) {
-          this.showDialog({
-            title: 'The game was deleted',
-            text: 'Try to join another one or create your own',
-            confirmAction: function() {
-              this.cleanUpAndChangeView({ name: 'main' });
-            },
-          });
-        }
-        if (startedSnapshot.val() === true) {
-          this.cleanUpAndChangeView({
-            name: 'game',
-            params: { roomId: this.$route.params.roomId },
-          });
-        }
-      });
+    this.showPersistentDialog({
+      text: 'Connecting...',
     });
+    signUserIn(
+      this.$store,
+      () => {
+        this.hidePersistentDialog();
+        this.refreshPage();
+      },
+      () => {
+        this.showPersistentDialog({
+          text: 'Unable to connect to Firebase :/ Try refreshing later.',
+        });
+      },
+    );
   },
   components: {
     Dialog,
+    PersistentDialog,
   },
 };
 </script>
