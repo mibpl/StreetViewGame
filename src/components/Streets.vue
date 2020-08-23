@@ -4,10 +4,11 @@
       id="back-to-position-button"
       class="custom-control-button"
       fab
+      elevation="0"
       color="secondary"
       @click="goBackToStart"
     >
-      <v-icon size="50">mdi-anchor</v-icon>
+      <v-icon large>mdi-anchor</v-icon>
     </v-btn>
     <div id="street-view-anchor" />
   </div>
@@ -17,8 +18,8 @@
 .custom-control-button {
   position: absolute;
   z-index: 2;
-  right: 15px;
-  bottom: 220px;
+  right: 10px;
+  bottom: 210px;
 }
 
 #street-view-container {
@@ -27,6 +28,11 @@
   display: flex;
   flex-direction: column;
   flex-wrap: nowrap;
+}
+
+#back-to-position-button {
+  width: 50px;
+  height: 50px;
 }
 
 #street-view-anchor {
