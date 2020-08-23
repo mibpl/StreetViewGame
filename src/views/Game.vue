@@ -38,6 +38,7 @@
         v-bind:deadlineTimestamp="deadlineTimestamp"
       />
     </div>
+    <PersistentDialog />
   </div>
 </template>
 
@@ -83,7 +84,10 @@ import MarkerMap from '@/components/MarkerMap.vue';
 import RoundStatus from '@/components/RoundStatus.vue';
 import Leaderboard from '@/components/Leaderboard.vue';
 import PlayerList from '@/components/PlayerList.vue';
+import PersistentDialog from '@/components/PersistentDialog';
 import maps from '@/maps_util.js';
+import { signUserIn } from '@/firebase_utils.js';
+import { mapMutations } from 'vuex';
 
 var roomState = {};
 
@@ -95,6 +99,7 @@ export default {
     RoundStatus,
     Leaderboard,
     PlayerList,
+    PersistentDialog,
   },
   data: function() {
     return {
@@ -112,74 +117,92 @@ export default {
     };
   },
   mounted: function() {
-    const roomId = this.$route.params.roomId;
-    function cb(snapshot) {
-      console.log('Game Snapshot changed:', snapshot.val());
-      roomState = snapshot.val();
-      this.currentChief = roomState.chief;
-      this.timeLimit = roomState.time_limit || null;
-
-      this.round = roomState.current_round;
-      this.mapPosition = roomState.rounds[this.round].map_position;
-      this.currentSummary = roomState.rounds[this.round].summary;
-      this.guesses = roomState.rounds[this.round].guesses;
-      if (!this.guesses) {
-        this.guesses = [];
-      }
-      if (!this.players) {
-        this.players = [];
-      }
-
-      this.players = roomState.players;
-
-      for (const player_uuid in this.players) {
-        this.players[player_uuid].guessedThisRound =
-          player_uuid in this.guesses;
-      }
-
-      const summaries = {};
-      for (const player_uuid in roomState.players) {
-        summaries[player_uuid] = {};
-        for (const round_id in roomState.rounds) {
-          summaries[player_uuid][round_id] = 0;
-        }
-      }
-
-      for (const round_id in roomState.rounds) {
-        const round = roomState.rounds[round_id];
-        const summary = maps.score(round.summary || {});
-        for (const player_uuid in summary) {
-          if (player_uuid in this.players) {
-            summaries[player_uuid][round_id] = summary[player_uuid];
-          }
-        }
-      }
-
-      this.deadlineTimestamp = roomState.rounds[this.round].deadline || null;
-
-      if (
-        this.deadlineTimestamp == null &&
-        this.timeLimit != null &&
-        this.isChief()
-      ) {
-        firebase
-          .database()
-          .ref(process.env.VUE_APP_DB_PREFIX + roomId)
-          .child('rounds')
-          .child(roomState.current_round)
-          .child('deadline')
-          .set(new Date().getTime() + this.timeLimit * 1000);
-      }
-
-      this.roundSummaries = summaries;
-      this.roundsSize = roomState.rounds.length;
-    }
-    firebase
-      .database()
-      .ref(process.env.VUE_APP_DB_PREFIX + roomId)
-      .on('value', cb.bind(this));
+    this.showPersistentDialog({
+      text: 'Connecting...',
+    });
+    signUserIn(
+      this.$store,
+      () => {
+        this.hidePersistentDialog();
+        this.refreshPage();
+      },
+      error => {
+        console.log('Connection error:', error);
+        this.showPersistentDialog({
+          text: 'Unable to connect to Firebase :/ Try refreshing later.',
+        });
+      },
+    );
   },
   methods: {
+    refreshPage: function() {
+      const roomId = this.$route.params.roomId;
+      function cb(snapshot) {
+        console.log('Game Snapshot changed:', snapshot.val());
+        roomState = snapshot.val();
+        this.currentChief = roomState.chief;
+        this.timeLimit = roomState.time_limit || null;
+
+        this.round = roomState.current_round;
+        this.mapPosition = roomState.rounds[this.round].map_position;
+        this.currentSummary = roomState.rounds[this.round].summary;
+        this.guesses = roomState.rounds[this.round].guesses;
+        if (!this.guesses) {
+          this.guesses = [];
+        }
+        if (!this.players) {
+          this.players = [];
+        }
+
+        this.players = roomState.players;
+
+        for (const player_uuid in this.players) {
+          this.players[player_uuid].guessedThisRound =
+            player_uuid in this.guesses;
+        }
+
+        const summaries = {};
+        for (const player_uuid in roomState.players) {
+          summaries[player_uuid] = {};
+          for (const round_id in roomState.rounds) {
+            summaries[player_uuid][round_id] = 0;
+          }
+        }
+
+        for (const round_id in roomState.rounds) {
+          const round = roomState.rounds[round_id];
+          const summary = maps.score(round.summary || {});
+          for (const player_uuid in summary) {
+            if (player_uuid in this.players) {
+              summaries[player_uuid][round_id] = summary[player_uuid];
+            }
+          }
+        }
+
+        this.deadlineTimestamp = roomState.rounds[this.round].deadline || null;
+
+        if (
+          this.deadlineTimestamp == null &&
+          this.timeLimit != null &&
+          this.isChief()
+        ) {
+          firebase
+            .database()
+            .ref(process.env.VUE_APP_DB_PREFIX + roomId)
+            .child('rounds')
+            .child(roomState.current_round)
+            .child('deadline')
+            .set(new Date().getTime() + this.timeLimit * 1000);
+        }
+
+        this.roundSummaries = summaries;
+        this.roundsSize = roomState.rounds.length;
+      }
+      firebase
+        .database()
+        .ref(process.env.VUE_APP_DB_PREFIX + roomId)
+        .on('value', cb.bind(this));
+    },
     guess: function(event) {
       const roomId = this.$route.params.roomId;
       firebase
@@ -247,6 +270,7 @@ export default {
         .child(player_uuid)
         .remove();
     },
+    ...mapMutations(['showPersistentDialog', 'hidePersistentDialog']),
   },
 };
 </script>
