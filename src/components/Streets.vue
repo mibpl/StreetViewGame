@@ -6,7 +6,7 @@
       icon
       @click="goBackToStart"
     >
-      <v-icon size="36">mdi-anchor</v-icon>
+      <v-icon size="50">mdi-anchor</v-icon>
     </v-btn>
     <div id="street-view-anchor" />
   </div>
