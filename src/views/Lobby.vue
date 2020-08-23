@@ -64,7 +64,7 @@ import * as firebase from 'firebase/app';
 import 'firebase/database';
 import Dialog from '@/components/Dialog';
 import PersistentDialog from '@/components/PersistentDialog';
-import { roomObjectPath, signUserIn } from '@/firebase_utils.js';
+import { roomObjectPath, signInGuard, roomGuard } from '@/firebase_utils.js';
 
 export default {
   name: 'Lobby',
@@ -225,18 +225,42 @@ export default {
     this.showPersistentDialog({
       text: 'Connecting...',
     });
-    signUserIn(
-      this.$store,
-      () => {
-        this.hidePersistentDialog();
-        this.refreshPage();
-      },
-      () => {
+    signInGuard(this.$store)
+      .catch(error => {
+        console.log('Error getting user UID:', error);
         this.showPersistentDialog({
           text: 'Unable to connect to Firebase :/ Try refreshing later.',
         });
-      },
-    );
+      })
+      .then(() => {
+        const uid = this.$store.state.uid;
+        const roomId = this.$route.params.roomId;
+        return roomGuard(roomId, uid);
+      })
+      .then(() => {
+        this.hidePersistentDialog();
+        this.refreshPage();
+      })
+      .catch(error_room => {
+        if (error_room === null) {
+          // Room doesn't exist.
+          this.showDialog({
+            title: "Room doesn't exist",
+            text:
+              "Room you are trying to access doesn't exist. " +
+              'Use correct link or create a new room.',
+            confirmAction: function() {
+              this.cleanUpAndChangeView({ name: 'main' });
+            },
+          });
+        } else {
+          // User is not in the room. Redirect them to the join link.
+          this.cleanUpAndChangeView({
+            name: 'join',
+            params: { roomId: this.$route.params.roomId },
+          });
+        }
+      });
   },
   components: {
     Dialog,

@@ -14,21 +14,31 @@ export function roomObjectPath(roomId) {
 // If the error callback is triggered, it means we could not connect to
 // Firebase or are in unexpected (inconsistent) state. Probably best to not let
 // user interact with the application in any way.
-export function signUserIn(store, successCallback, errorCallback) {
+export function signInGuard(store) {
   if (store.state.uid) {
-    successCallback();
-    return;
+    return Promise.resolve();
   }
-  firebase
+  return firebase
     .auth()
     .signInAnonymously()
     .then(function(userCreds) {
       if (userCreds.user.uid) {
         store.commit('setUid', userCreds.user.uid);
-        successCallback();
       } else {
-        errorCallback('got empty UID from Firebase');
+        throw 'got empty UID from Firebase';
       }
-    })
-    .catch(errorCallback);
+    });
+}
+
+export function roomGuard(roomId, userUid) {
+  const roomRef = firebase.database().ref(roomObjectPath(roomId));
+
+  return roomRef.once('value').then(roomSnapshot => {
+    if (!roomSnapshot.exists()) {
+      throw null;
+    }
+    if (!roomSnapshot.child(`players/${userUid}`).exists()) {
+      throw roomSnapshot.val();
+    }
+  });
 }

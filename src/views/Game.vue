@@ -86,7 +86,7 @@ import Leaderboard from '@/components/Leaderboard.vue';
 import PlayerList from '@/components/PlayerList.vue';
 import PersistentDialog from '@/components/PersistentDialog';
 import maps from '@/maps_util.js';
-import { signUserIn } from '@/firebase_utils.js';
+import { roomObjectPath, signInGuard, roomGuard } from '@/firebase_utils.js';
 import { mapMutations } from 'vuex';
 
 var roomState = {};
@@ -120,19 +120,42 @@ export default {
     this.showPersistentDialog({
       text: 'Connecting...',
     });
-    signUserIn(
-      this.$store,
-      () => {
-        this.hidePersistentDialog();
-        this.refreshPage();
-      },
-      error => {
-        console.log('Connection error:', error);
+    signInGuard(this.$store)
+      .catch(error => {
+        console.log('Error getting user UID:', error);
         this.showPersistentDialog({
           text: 'Unable to connect to Firebase :/ Try refreshing later.',
         });
-      },
-    );
+      })
+      .then(() => {
+        const uid = this.$store.state.uid;
+        const roomId = this.$route.params.roomId;
+        return roomGuard(roomId, uid);
+      })
+      .then(() => {
+        this.hidePersistentDialog();
+        this.refreshPage();
+      })
+      .catch(error_room => {
+        if (error_room === null) {
+          // Room doesn't exist.
+          this.showDialog({
+            title: "Room doesn't exist",
+            text:
+              "Room you are trying to access doesn't exist. " +
+              'Use correct link or create a new room.',
+            confirmAction: function() {
+              this.cleanUpAndChangeView({ name: 'main' });
+            },
+          });
+        } else {
+          // User is not in the room. Redirect them to the join link.
+          this.cleanUpAndChangeView({
+            name: 'join',
+            params: { roomId: this.$route.params.roomId },
+          });
+        }
+      });
   },
   methods: {
     refreshPage: function() {
@@ -188,7 +211,7 @@ export default {
         ) {
           firebase
             .database()
-            .ref(process.env.VUE_APP_DB_PREFIX + roomId)
+            .ref(roomObjectPath(roomId))
             .child('rounds')
             .child(roomState.current_round)
             .child('deadline')
@@ -200,14 +223,14 @@ export default {
       }
       firebase
         .database()
-        .ref(process.env.VUE_APP_DB_PREFIX + roomId)
+        .ref(roomObjectPath(roomId))
         .on('value', cb.bind(this));
     },
     guess: function(event) {
       const roomId = this.$route.params.roomId;
       firebase
         .database()
-        .ref(process.env.VUE_APP_DB_PREFIX + roomId)
+        .ref(roomObjectPath(roomId))
         .child('rounds')
         .child(this.round)
         .child('guesses')
@@ -222,12 +245,19 @@ export default {
 
       firebase
         .database()
-        .ref(process.env.VUE_APP_DB_PREFIX + roomId)
+        .ref(roomObjectPath(roomId))
         .child('rounds')
         .child(this.round)
         .child('summary')
         .child(this.$store.state.uid)
         .set(distance);
+    },
+    cleanUpAndChangeView(location) {
+      firebase
+        .database()
+        .ref(roomObjectPath(this.$route.params.roomId))
+        .off();
+      this.$router.push(location);
     },
     everyoneGuessed: function() {
       if (!this.players) return false;

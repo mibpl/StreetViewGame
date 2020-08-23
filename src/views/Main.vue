@@ -64,7 +64,7 @@ import 'firebase/database';
 import { hri } from 'human-readable-ids';
 import maps from '@/maps_util.js';
 import { mapMutations } from 'vuex';
-import { roomObjectPath, signUserIn } from '@/firebase_utils.js';
+import { roomObjectPath, signInGuard } from '@/firebase_utils.js';
 
 export default {
   name: 'Main',
@@ -208,18 +208,16 @@ export default {
     this.showPersistentDialog({
       text: 'Connecting...',
     });
-    signUserIn(
-      this.$store,
-      () => {
+    signInGuard(this.$store)
+      .then(() => {
         this.hidePersistentDialog();
-      },
-      error => {
-        console.log('Connection error:', error);
+      })
+      .catch(error => {
+        console.log('Error getting user UID:', error);
         this.showPersistentDialog({
           text: 'Unable to connect to Firebase :/ Try refreshing later.',
         });
-      },
-    );
+      });
   },
 };
 </script>
