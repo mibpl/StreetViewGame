@@ -136,10 +136,7 @@ export default {
       });
     },
     joinGame: function() {
-      const uid = this.getUid();
-      if (!uid) {
-        return;
-      }
+      const uid = this.$store.state.uid;
       const username = this.getUsername();
       if (!username) {
         return;
