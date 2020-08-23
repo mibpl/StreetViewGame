@@ -3,7 +3,8 @@
     <v-btn
       id="back-to-position-button"
       class="custom-control-button"
-      icon
+      fab
+      color="secondary"
       @click="goBackToStart"
     >
       <v-icon size="50">mdi-anchor</v-icon>
@@ -14,7 +15,6 @@
 
 <style scoped>
 .custom-control-button {
-  background-color:blueviolet;
   position: absolute;
   z-index: 2;
   right: 15px;
@@ -36,7 +36,6 @@
 
 <script>
 /*global google*/
-import Vue from 'vue';
 
 const DEFAULT_POV = { heading: -110, pitch: 0 };
 

@@ -15,7 +15,14 @@
         />
         <v-card-actions v-if="isChief()">
           <v-spacer></v-spacer>
-          <v-btn v-if="isNotLastRound()" tile dark color="red" v-on:click="nextround()">Next round!</v-btn>
+          <v-btn
+            class="white--text"
+            color="accent"
+            v-if="isNotLastRound()"
+            v-on:click="nextround()"
+          >
+            Next round!
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-overlay>
@@ -26,7 +33,10 @@
     />
     <Streets v-bind:mapPosition="mapPosition" />
     <div id="map-overlay">
-      <MarkerMap @on-guess="guess($event)" v-bind:deadlineTimestamp="deadlineTimestamp" />
+      <MarkerMap
+        @on-guess="guess($event)"
+        v-bind:deadlineTimestamp="deadlineTimestamp"
+      />
     </div>
   </div>
 </template>

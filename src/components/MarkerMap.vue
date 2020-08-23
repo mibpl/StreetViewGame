@@ -1,9 +1,10 @@
 <template>
   <div id="marker-map-container">
     <div id="map-anchor" />
-    <v-btn tile color="red" v-on:click="guess()" dark
-      >Make a guess<p v-if="deadlineTimestamp != null"> ({{ timeLeft.toFixed(0) }}s)</p></v-btn
-    >
+    <v-btn tile color="accent" v-on:click="guess()" class="white--text">
+      Make a guess
+      <p v-if="deadlineTimestamp != null">({{ timeLeft.toFixed(0) }}s)</p>
+    </v-btn>
     <!-- <button v-on:click="mathdebug()">Do some math!</button> !-->
   </div>
 </template>

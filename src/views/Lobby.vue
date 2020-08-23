@@ -18,7 +18,10 @@
           </v-card-text>
           <v-list dense v-if="connected_players_names.length > 0">
             <v-subheader>Connected Players</v-subheader>
-            <v-list-item v-for="player_name in connected_players_names" :key="player_name">
+            <v-list-item
+              v-for="player_name in connected_players_names"
+              :key="player_name"
+            >
               <v-list-item-title>{{ player_name }}</v-list-item-title>
             </v-list-item>
           </v-list>
@@ -31,7 +34,9 @@
               label="Round time limit (sec)"
               type="number"
             />
-            <v-btn v-on:click="startGame" color="primary">Start game</v-btn>
+            <v-btn v-on:click="startGame" color="primary" class="white--text">
+              Start game
+            </v-btn>
           </v-card-actions>
           <v-card-text v-if="!isChief()">
             <div>Waiting for {{ chiefName }} to start the game...</div>

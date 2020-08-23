@@ -17,14 +17,24 @@
         </v-card>
         <v-row v-if="$route.params.roomId" align="center">
           <v-col class="text-center">
-            <v-btn id="play_btn" color="primary" v-on:click="joinGame">
+            <v-btn
+              id="play_btn"
+              color="primary"
+              v-on:click="joinGame"
+              class="white--text"
+            >
               Play!
             </v-btn>
           </v-col>
         </v-row>
         <v-row align="center">
           <v-col class="text-center">
-            <v-btn v-on:click="createRoom" id="create_room_btn" color="primary">
+            <v-btn
+              v-on:click="createRoom"
+              id="create_room_btn"
+              color="primary"
+              class="white--text"
+            >
               Create a new room
             </v-btn>
           </v-col>
