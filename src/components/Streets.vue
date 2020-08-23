@@ -1,17 +1,32 @@
 <template>
   <div id="street-view-container">
+    <v-btn
+      id="back-to-position-button"
+      class="custom-control-button"
+      icon
+      @click="goBackToStart"
+    >
+      <v-icon size="36">mdi-anchor</v-icon>
+    </v-btn>
     <div id="street-view-anchor" />
   </div>
 </template>
 
 <style scoped>
+.custom-control-button {
+  background-color:blueviolet;
+  position: absolute;
+  z-index: 2;
+  right: 15px;
+  bottom: 220px;
+}
+
 #street-view-container {
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
   flex-wrap: nowrap;
-
 }
 
 #street-view-anchor {
@@ -36,7 +51,12 @@ export default {
     return {};
   },
   name: 'Streets',
-  methods: {},
+  methods: {
+    goBackToStart: function() {
+      this.panorama.setPosition(this.mapPosition);
+      this.panorama.setPov(DEFAULT_POV);
+    },
+  },
   mounted: function() {
     this.panorama = new google.maps.StreetViewPanorama(
       document.getElementById('street-view-anchor'),
