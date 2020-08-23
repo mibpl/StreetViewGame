@@ -1,12 +1,12 @@
 <template>
   <div id="player-list-container">
     <div v-for="(player, uuid) in playerGuessStatus" :key="uuid">
-      <div class="player-readiness-block">
+      <v-card class="player-readiness-block" elevation="20" color="rgb(180,154,237)">
         {{ player.username }}
-        <p v-if="player.guessedThisRound">[ready]</p>
-        <p v-else>[waiting]</p>
-        <button v-if="isChief" v-on:click="kickPlayer(uuid)">X</button>
-      </div>
+        <v-icon v-if="player.guessedThisRound" size="15">mdi-checkbox-marked-circle-outline</v-icon>
+        <v-icon v-else size="15">mdi-checkbox-blank-circle-outline</v-icon>
+        <v-icon v-if="isChief" v-on:click="kickPlayer(uuid)" size="15">mdi-account-off</v-icon>
+      </v-card>
     </div>
   </div>
 </template>
@@ -22,6 +22,7 @@
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
+  margin-right: 10px;
 }
 </style>
 
