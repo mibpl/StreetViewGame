@@ -17,7 +17,6 @@ beforeEach(() => {
 });
 
 Cypress.on('window:before:load', win => {
-  console.log('before load');
   const google = {
     maps: {
       StreetViewService: cy.stub(),

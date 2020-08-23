@@ -61,7 +61,6 @@ import Dialog from '@/components/Dialog';
 import PersistentDialog from '@/components/PersistentDialog';
 import * as firebase from 'firebase/app';
 import 'firebase/database';
-import { trySignIn } from '@/store';
 import { hri } from 'human-readable-ids';
 import maps from '@/maps_util.js';
 import { mapMutations } from 'vuex';
@@ -84,19 +83,6 @@ export default {
     },
   },
   methods: {
-    getUid: function() {
-      const uid = this.$store.state.uid;
-      if (uid === null) {
-        trySignIn();
-        this.showDialog({
-          title: 'Connection Error',
-          text:
-            'There was a problem with connection to Firebase :( Try again later.',
-        });
-        return null;
-      }
-      return uid;
-    },
     getUsername: function() {
       const username = this.username;
       if (!username) {
@@ -109,10 +95,7 @@ export default {
       return username;
     },
     createRoom: async function() {
-      const uid = this.getUid();
-      if (!uid) {
-        return;
-      }
+      const uid = this.$store.state.uid;
       const username = this.getUsername();
       if (!username) {
         return;
