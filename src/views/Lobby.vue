@@ -18,17 +18,20 @@
           </v-card-text>
           <v-list dense v-if="connected_players_names.length > 0">
             <v-subheader>Connected Players</v-subheader>
-            <v-list-item
-              v-for="player_name in connected_players_names"
-              :key="player_name"
-            >
+            <v-list-item v-for="player_name in connected_players_names" :key="player_name">
               <v-list-item-title>{{ player_name }}</v-list-item-title>
             </v-list-item>
           </v-list>
           <v-card-actions v-if="isChief()">
-            <label for="timeLimitInput">Round time limit (sec)</label>
-            <input id="timeLimitInput" v-model.number="timeLimit" :min="1" :max="3600" label="foo" />
-            <v-spacer /><v-btn v-on:click="startGame" color="primary">Start game</v-btn>
+            <v-text-field
+              id="timeLimitInput"
+              v-model="timeLimit"
+              :min="1"
+              :max="3600"
+              label="Round time limit (sec)"
+              type="number"
+            />
+            <v-btn v-on:click="startGame" color="primary">Start game</v-btn>
           </v-card-actions>
           <v-card-text v-if="!isChief()">
             <div>Waiting for {{ chiefName }} to start the game...</div>
@@ -179,8 +182,10 @@ export default {
           });
         }
         this.connected_players = Object.fromEntries(
-          Object.entries(playersSnapshot.val())
-            .map(entry => [entry[0], entry[1].username]),
+          Object.entries(playersSnapshot.val()).map(entry => [
+            entry[0],
+            entry[1].username,
+          ]),
         );
       });
       this.chiefDbRef = roomRef.child('chief');
