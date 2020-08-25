@@ -33,7 +33,7 @@ class GoogleMapsWrapper {
       {
         location: latLng,
         preference: google.maps.StreetViewPreference.NEAREST,
-        radius: 200 * 1000, // meters
+        radius: 40 * 1000, // meters
         source: google.maps.StreetViewSource.OUTDOOR,
       },
       verify_cb,
