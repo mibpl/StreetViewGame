@@ -165,11 +165,13 @@ for your project
 * locate the service account responsible for Cloud Build (it should have
   `cloudbuild.gserviceaccount.com` in the name) in
   [IAM & Admin](https://console.cloud.google.com/iam-admin/iam) console
-* give it the following roles:
-  - App Engine Deployer
-  - App Engine Service Admin
+* give it the following roles (see also
+  [Google's documentation](https://cloud.google.com/appengine/docs/flexible/nodejs/roles#recommended_role_for_application_deployment)):
+  - App Engine Admin
   - Cloud Build Service Account
-  - Storage Object Viewer
+  - Cloud Build Editor
+  - Service Account User
+  - Storage Admin
 
 Afterwards, you should be able to run:
 ```
