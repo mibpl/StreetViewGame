@@ -81,9 +81,7 @@ export default {
 
       this.markers = [];
     },
-  },
-  watch: {
-    player_ready_list: function() {
+    refreshMarkers: function() {
       this.wipeMarkers();
       this.mountMap();
 
@@ -128,9 +126,15 @@ export default {
       }
     },
   },
+  watch: {
+    player_ready_list: function() {
+      this.refreshMarkers();
+    },
+  },
   mounted: function() {
     this.wipeMarkers();
     this.mountMap();
+    this.refreshMarkers();
   },
 };
 </script>
