@@ -260,8 +260,8 @@ export default {
       this.$router.push(location);
     },
     everyoneGuessed: function() {
-      if (!this.players) return false;
-      if (!this.guesses) return false;
+      if (Object.keys(this.players).length == 0) return false;
+      if (Object.keys(this.guesses).length == 0) return false;
       for (const player_uuid in this.players) {
         if (!(player_uuid in this.guesses)) return false;
       }
