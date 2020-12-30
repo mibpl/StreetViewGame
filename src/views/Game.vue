@@ -1,6 +1,6 @@
 <template>
   <div id="game-view-container">
-    <v-overlay v-show="everyoneGuessed()">
+    <v-overlay :value="everyoneGuessed()">
       <v-card light>
         <Leaderboard
           v-bind:players="players"
