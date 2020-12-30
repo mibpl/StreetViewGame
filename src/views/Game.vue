@@ -1,19 +1,30 @@
 <template>
   <div id="game-view-container">
-    <v-overlay :value="everyoneGuessed()">
-      <v-card light>
-        <Leaderboard
-          v-bind:players="players"
-          v-bind:roundSummaries="roundSummaries"
-          v-bind:roundsSize="roundsSize"
-        />
-        <RoundStatus
-          v-bind:players="players"
-          v-bind:guesses="guesses"
-          v-bind:mapPosition="mapPosition"
-          v-bind:summary="currentSummary"
-        />
-        <v-card-actions v-if="isChief()">
+    <v-overlay :value="everyoneGuessed()" id="leaderboard-overlay">
+      <v-card light height="100%">
+        <v-card-title>
+          Leaderboard
+        </v-card-title>
+        <v-container>
+          <v-row no-gutters style="height: 80vh">
+            <v-col cols="6">
+              <Leaderboard
+                v-bind:players="players"
+                v-bind:roundSummaries="roundSummaries"
+                v-bind:roundsSize="roundsSize"
+              />
+            </v-col>
+            <v-col cols="6">
+              <RoundStatus
+                v-bind:players="players"
+                v-bind:guesses="guesses"
+                v-bind:mapPosition="mapPosition"
+                v-bind:summary="currentSummary"
+              />
+            </v-col>
+          </v-row>
+        </v-container>
+        <v-card-actions v-if="isChief()" class="card-bottom">
           <v-spacer></v-spacer>
           <v-btn
             class="white--text"
@@ -71,6 +82,17 @@
 #map-overlay:hover {
   width: 90%;
   height: 90%;
+}
+
+#leaderboard-overlay >>> .v-overlay__content {
+  width: 80vw;
+  height: 90vh;
+}
+
+.card-bottom {
+  position: absolute;
+  bottom: 0;
+  right: 0;
 }
 </style>
 

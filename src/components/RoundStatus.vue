@@ -1,11 +1,15 @@
 <template>
-  <v-card-text>
-    <div
-      style="width: 800px; height: 800px; position: fixed; left: 0; right: 0;"
-      id="round-summary-map-anchor"
-    />
-  </v-card-text>
+  <div id="round-summary-map-anchor" />
 </template>
+<style scoped>
+#round-summary-map-anchor {
+  position: fixed;
+  width: 35vw;
+  height: 75vh;
+  overflow: hidden;
+  max-height: calc(90vh - 150px);
+}
+</style>
 
 <script>
 /*global google*/
