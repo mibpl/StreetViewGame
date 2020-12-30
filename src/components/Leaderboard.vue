@@ -1,8 +1,5 @@
 <template>
   <v-container>
-    <v-card-title>
-      Leaderboard
-    </v-card-title>
     <v-card-text>
       <v-simple-table dense>
         <thead>
