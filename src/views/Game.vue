@@ -24,16 +24,20 @@
             </v-col>
           </v-row>
         </v-container>
-        <v-card-actions v-if="isChief()" class="card-bottom">
-          <v-spacer></v-spacer>
+        <v-card-actions v-if="isNotLastRound()" class="card-bottom">
           <v-btn
             class="white--text"
             color="accent"
-            v-if="isNotLastRound()"
+            v-if="isChief()"
             v-on:click="nextround()"
           >
             Next round!
           </v-btn>
+          <v-card-text v-if="!isChief()">
+            <div class="font-weight-light font-italic">
+              Waiting for {{ chiefName }} to start next round...
+            </div>
+          </v-card-text>
         </v-card-actions>
       </v-card>
     </v-overlay>
@@ -178,6 +182,11 @@ export default {
           });
         }
       });
+  },
+  computed: {
+    chiefName: function() {
+      return this.players[this.currentChief].username;
+    },
   },
   methods: {
     refreshPage: function() {
