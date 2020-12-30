@@ -75,6 +75,7 @@ export default {
         imageDateControl: false,
         linksControl: false,
         showRoadLabels: false,
+        panControl: true,
       },
     );
   },
