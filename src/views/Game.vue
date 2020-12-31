@@ -195,7 +195,7 @@ export default {
         console.log('Game Snapshot changed:', snapshot.val());
         roomState = snapshot.val();
         this.currentChief = roomState.chief;
-        this.timeLimit = roomState.time_limit || null;
+        this.timeLimit = roomState.options?.time_limit || null;
 
         this.round = roomState.current_round;
         this.mapPosition = roomState.rounds[this.round].map_position;

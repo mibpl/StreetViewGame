@@ -1,6 +1,11 @@
 <template>
-  <v-container class="fill-height" fluid>
-    <v-row align="center" justify="center">
+  <v-container fluid>
+    <v-row justify="center">
+      <v-col>
+        <v-spacer></v-spacer>
+      </v-col>
+    </v-row>
+    <v-row justify="center">
       <v-col cols="5">
         <v-card outlined align="center" justify="center">
           <v-card-text>
@@ -12,36 +17,35 @@
             </div>
           </v-card-text>
         </v-card>
-        <v-card outlined>
-          <v-card-text v-if="connected_players_names.length == 0">
-            <div>No one has joined yet...</div>
-          </v-card-text>
-          <v-list dense v-if="connected_players_names.length > 0">
-            <v-subheader>Connected Players</v-subheader>
-            <v-list-item
-              v-for="player_name in connected_players_names"
-              :key="player_name"
-            >
-              <v-list-item-title>{{ player_name }}</v-list-item-title>
-            </v-list-item>
-          </v-list>
-          <v-card-actions v-if="isChief()">
-            <v-text-field
-              id="timeLimitInput"
-              v-model="timeLimit"
-              :min="1"
-              :max="3600"
-              label="Round time limit (sec)"
-              type="number"
-            />
-            <v-btn v-on:click="startGame" color="primary" class="white--text">
-              Start game
-            </v-btn>
-          </v-card-actions>
-          <v-card-text v-if="!isChief()">
-            <div>Waiting for {{ chiefName }} to start the game...</div>
-          </v-card-text>
-        </v-card>
+      </v-col>
+    </v-row>
+    <v-row justify="center">
+      <v-col cols="5">
+        <LobbyConnectedPlayers
+          v-bind:connectedPlayersNames="connectedPlayersNames"
+        />
+      </v-col>
+      <v-col cols="5">
+        <LobbyOptions
+          :isChief="isChief()"
+          :roomId="roomId"
+          v-on:firebase_error="firebaseErrorDialog"
+        />
+      </v-col>
+    </v-row>
+    <v-row justify="center">
+      <v-col class="text-center">
+        <v-btn
+          v-if="isChief()"
+          v-on:click="startGame"
+          color="primary"
+          class="white--text"
+        >
+          Start game
+        </v-btn>
+        <p v-if="!isChief()" class="font-italic">
+          Waiting for {{ chiefName }} to start the game...
+        </p>
       </v-col>
     </v-row>
     <v-row align="center" justify="center">
@@ -59,6 +63,8 @@
 // Lobby is used for waiting for other players to join.
 // The chief of the room can start the game at any moment.
 // In future, potential options (eg. only Poland) can be chosen here.
+import LobbyConnectedPlayers from '@/components/LobbyConnectedPlayers.vue';
+import LobbyOptions from '@/components/LobbyOptions.vue';
 import { mapMutations } from 'vuex';
 import * as firebase from 'firebase/app';
 import 'firebase/database';
@@ -76,7 +82,6 @@ export default {
       playersDbRef: null,
       chiefDbRef: null,
       startedDbRef: null,
-      timeLimit: 0,
     };
   },
   methods: {
@@ -87,10 +92,6 @@ export default {
     startGame() {
       if (!this.startedDbRef) {
         console.log('Trying to start game before "created"');
-      }
-      if (this.timeLimit > 0) {
-        const roomRef = firebase.database().ref(roomObjectPath(this.roomId));
-        roomRef.child('time_limit').set(this.timeLimit);
       }
       this.startedDbRef.set(true, error => {
         if (error) {
@@ -105,7 +106,7 @@ export default {
         }
       });
     },
-    cleanUpAndChangeView(location) {
+    cleanUp() {
       if (this.playersDbRef) {
         this.playersDbRef.off();
       }
@@ -115,7 +116,16 @@ export default {
       if (this.startedDbRef) {
         this.startedDbRef.off();
       }
+    },
+    cleanUpAndChangeView(location) {
+      this.cleanUp();
       this.$router.push(location);
+    },
+    firebaseErrorDialog(errorText) {
+      this.showDialog({
+        title: 'Firebase connection error',
+        text: errorText + ' Please try again later.',
+      });
     },
     refreshPage() {
       if (!this.roomId) {
@@ -211,7 +221,7 @@ export default {
     roomId: function() {
       return this.$route.params.roomId;
     },
-    connected_players_names: function() {
+    connectedPlayersNames: function() {
       return Object.values(this.connected_players);
     },
     chiefName: function() {
@@ -262,8 +272,13 @@ export default {
         }
       });
   },
+  unmounted: function() {
+    this.cleanUp();
+  },
   components: {
     Dialog,
+    LobbyConnectedPlayers,
+    LobbyOptions,
     PersistentDialog,
   },
 };
