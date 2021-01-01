@@ -2,8 +2,7 @@ import Vue from 'vue';
 import Vuex from 'vuex';
 import Vuetify from 'vuetify';
 import { mount, createLocalVue } from '@vue/test-utils';
-import { newStore } from '@/store';
-import firebase from 'firebase/app';
+import dialogModule from '@/store/modules/persistent_dialog.store';
 
 import PersistentDialog from '@/components/PersistentDialog.vue';
 
@@ -34,14 +33,12 @@ describe('PersistentDialog', () => {
   beforeEach(() => {
     localVue = createLocalVue();
     localVue.use(Vuex);
-    jest.spyOn(firebase, 'auth').mockImplementation(() => {
-      return {
-        signInAnonymously: jest.fn(() => Promise.resolve()),
-        onAuthStateChanged: jest.fn(),
-      };
-    });
     vuetify = new Vuetify();
-    store = newStore();
+    store = new Vuex.Store({
+      modules: {
+        persistentDialog: dialogModule,
+      },
+    });
   });
 
   it('not renered by default', () => {
@@ -50,22 +47,22 @@ describe('PersistentDialog', () => {
   });
 
   it('is renered after showPersistentDialog', () => {
-    store.commit('showPersistentDialog', {});
+    store.commit('persistentDialog/showPersistentDialog', {});
     const wrapper = mountDialog({});
     expect(wrapper.get('.v-dialog--active'));
   });
 
   it('disappears after hidePersistentDialog', async () => {
-    store.commit('showPersistentDialog', {});
+    store.commit('persistentDialog/showPersistentDialog', {});
     const wrapper = mountDialog({});
     expect(wrapper.get('.v-dialog--active'));
-    store.commit('hidePersistentDialog', {});
+    store.commit('persistentDialog/hidePersistentDialog', {});
     await wrapper.vm.$nextTick();
     expect(wrapper.find('.v-dialog--active').exists()).toBe(false);
   });
 
   it('renders correct text', () => {
-    store.commit('showPersistentDialog', { text: 'Text' });
+    store.commit('persistentDialog/showPersistentDialog', { text: 'Text' });
     const wrapper = mountDialog({});
     expect(wrapper.find('.v-card__text').text()).toBe('Text');
   });

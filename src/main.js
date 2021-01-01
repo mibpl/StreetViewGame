@@ -45,9 +45,21 @@ if (process.env.NODE_ENV === 'production') {
 
 maps.init();
 
+let store = newStore();
+firebase.auth().onAuthStateChanged(function(user) {
+  if (user) {
+    let uid = user.uid;
+    store.commit('auth/setUid', uid);
+    console.log('User logged in.');
+  } else {
+    store.commit('auth/setUid', null);
+    console.log('User somehow signed themselves out.');
+  }
+});
+
 new Vue({
   router,
   vuetify,
-  store: newStore(),
+  store,
   render: h => h(App),
 }).$mount('#app');

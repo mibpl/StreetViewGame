@@ -15,7 +15,7 @@ export function roomObjectPath(roomId) {
 // Firebase or are in unexpected (inconsistent) state. Probably best to not let
 // user interact with the application in any way.
 export function signInGuard(store) {
-  if (store.state.uid) {
+  if (store.state.auth.uid) {
     return Promise.resolve();
   }
   return firebase
@@ -23,7 +23,7 @@ export function signInGuard(store) {
     .signInAnonymously()
     .then(function(userCreds) {
       if (userCreds.user.uid) {
-        store.commit('setUid', userCreds.user.uid);
+        store.commit('auth/setUid', userCreds.user.uid);
       } else {
         throw 'got empty UID from Firebase';
       }

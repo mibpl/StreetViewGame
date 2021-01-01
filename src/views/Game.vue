@@ -154,7 +154,7 @@ export default {
         });
       })
       .then(() => {
-        const uid = this.$store.state.uid;
+        const uid = this.$store.state.auth.uid;
         const roomId = this.$route.params.roomId;
         return roomGuard(roomId, uid);
       })
@@ -265,7 +265,7 @@ export default {
         .child('rounds')
         .child(this.round)
         .child('guesses')
-        .child(this.$store.state.uid)
+        .child(this.$store.state.auth.uid)
         .set({
           latLng: event.latLng,
         });
@@ -280,7 +280,7 @@ export default {
         .child('rounds')
         .child(this.round)
         .child('summary')
-        .child(this.$store.state.uid)
+        .child(this.$store.state.auth.uid)
         .set(distance);
     },
     cleanUpAndChangeView(location) {
@@ -306,7 +306,7 @@ export default {
       maps.chooseRandomStreetView(cb.bind(this));
     },
     isChief() {
-      return this.$store.state.uid == this.currentChief;
+      return this.$store.state.auth.uid == this.currentChief;
     },
     nextround() {
       const roomId = this.$route.params.roomId;
@@ -331,7 +331,10 @@ export default {
         .child(player_uuid)
         .remove();
     },
-    ...mapMutations(['showPersistentDialog', 'hidePersistentDialog']),
+    ...mapMutations('persistentDialog', [
+      'showPersistentDialog',
+      'hidePersistentDialog',
+    ]),
   },
 };
 </script>

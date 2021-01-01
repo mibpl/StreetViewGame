@@ -2,8 +2,7 @@ import Vue from 'vue';
 import Vuex from 'vuex';
 import Vuetify from 'vuetify';
 import { mount, createLocalVue } from '@vue/test-utils';
-import { newStore } from '@/store';
-import firebase from 'firebase/app';
+import dialogModule from '@/store/modules/dialog.store';
 
 import Dialog from '@/components/Dialog.vue';
 
@@ -34,14 +33,12 @@ describe('Dialog', () => {
   beforeEach(() => {
     localVue = createLocalVue();
     localVue.use(Vuex);
-    jest.spyOn(firebase, 'auth').mockImplementation(() => {
-      return {
-        signInAnonymously: jest.fn(() => Promise.resolve()),
-        onAuthStateChanged: jest.fn(),
-      };
-    });
     vuetify = new Vuetify();
-    store = newStore();
+    store = new Vuex.Store({
+      modules: {
+        dialog: dialogModule,
+      },
+    });
   });
 
   it('not renered by default', () => {
@@ -50,20 +47,20 @@ describe('Dialog', () => {
   });
 
   it('is renered after showDialog', () => {
-    store.commit('showDialog', {});
+    store.commit('dialog/showDialog', {});
     const wrapper = mountDialog({});
     expect(wrapper.get('.v-dialog--active'));
   });
 
   it('renders correct title and text', () => {
-    store.commit('showDialog', { title: 'Title', text: 'Text' });
+    store.commit('dialog/showDialog', { title: 'Title', text: 'Text' });
     const wrapper = mountDialog({});
     expect(wrapper.find('.v-card__title').text()).toBe('Title');
     expect(wrapper.find('.v-card__text').text()).toBe('Text');
   });
 
   it('disappears on button click', async () => {
-    store.commit('showDialog', { title: 'Title', text: 'Text' });
+    store.commit('dialog/showDialog', { title: 'Title', text: 'Text' });
     const wrapper = mountDialog({});
 
     expect(wrapper.find('.v-dialog--active').exists()).toBe(true);
@@ -73,7 +70,7 @@ describe('Dialog', () => {
 
   it('triggers action on button click', async () => {
     const mockConfirmFn = jest.fn();
-    store.commit('showDialog', {
+    store.commit('dialog/showDialog', {
       title: 'Title',
       text: 'Text',
       confirmAction: mockConfirmFn,
