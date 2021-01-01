@@ -1,5 +1,5 @@
 <template>
-  <v-dialog persistent max-width="290" v-model="visible">
+  <v-dialog persistent max-width="60vw" v-model="visible">
     <v-card>
       <v-card-title></v-card-title>
       <v-card-text>
