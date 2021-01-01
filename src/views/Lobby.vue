@@ -81,7 +81,7 @@ export default {
   },
   methods: {
     isChief() {
-      const uid = this.$store.state.uid;
+      const uid = this.$store.state.auth.uid;
       return uid === this.chief;
     },
     startGame() {
@@ -121,7 +121,7 @@ export default {
       if (!this.roomId) {
         this.$router.push({ name: 'main' });
       }
-      const uid = this.$store.state.uid;
+      const uid = this.$store.state.auth.uid;
 
       const roomRef = firebase.database().ref(roomObjectPath(this.roomId));
       // Try getting room data from Firebase.
@@ -201,11 +201,11 @@ export default {
         });
       });
     },
-    ...mapMutations([
-      'showDialog',
+    ...mapMutations('persistentDialog', [
       'showPersistentDialog',
       'hidePersistentDialog',
     ]),
+    ...mapMutations('dialog', ['showDialog']),
   },
   computed: {
     roomId: function() {
@@ -233,7 +233,7 @@ export default {
         });
       })
       .then(() => {
-        const uid = this.$store.state.uid;
+        const uid = this.$store.state.auth.uid;
         const roomId = this.$route.params.roomId;
         return roomGuard(roomId, uid);
       })

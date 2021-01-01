@@ -1,67 +1,14 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
-import Cookies from 'js-cookie';
-import * as firebase from 'firebase/app';
-import 'firebase/auth';
+import modules from '@/store/modules';
 
 Vue.use(Vuex);
+const debug = process.env.NODE_ENV !== 'production';
 
-export function newStore() {
+export function newStore(strict = debug) {
   let store = new Vuex.Store({
-    state: {
-      username: Cookies.get('username') || null,
-      uid: null,
-      dialog: {
-        visible: false,
-        title: '',
-        text: '',
-        confirmAction: null,
-      },
-      persistentDialog: {
-        visible: false,
-        text: '',
-      },
-    },
-    mutations: {
-      setUsername(state, username) {
-        Cookies.set('username', username);
-        state.username = username;
-      },
-      setUid(state, uid) {
-        state.uid = uid;
-      },
-      // Functions related to dialog.
-      setDialogVisibility(state, visible) {
-        state.dialog.visible = visible;
-      },
-      showDialog(state, options) {
-        state.dialog.title = options.title || '';
-        state.dialog.text = options.text || '';
-        state.dialog.confirmAction = options.confirmAction || null;
-        state.dialog.visible = true;
-      },
-      // Functions related to persistent dialog.
-      showPersistentDialog(state, options) {
-        state.persistentDialog.text = options.text || '';
-        state.persistentDialog.visible = true;
-      },
-      hidePersistentDialog(state) {
-        state.persistentDialog.visible = false;
-      },
-    },
-    actions: {},
-    modules: {},
-  });
-
-  firebase.auth().onAuthStateChanged(function(user) {
-    if (user) {
-      let uid = user.uid;
-      store.commit('setUid', uid);
-      console.log('User logged in.');
-    } else {
-      store.commit('setUid', null);
-      console.log('User somehow signed themselves out.');
-    }
+    modules,
+    strict,
   });
 
   return store;

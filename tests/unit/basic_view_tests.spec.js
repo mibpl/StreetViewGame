@@ -41,7 +41,9 @@ describe('Main View', () => {
       };
     });
     vuetify = new Vuetify();
-    store = newStore();
+    // Turning off the strict mode, since it triggers the warning before each
+    // test as it is being recreated.
+    store = newStore(false);
   });
 
   it('does not render Play button if not from join link', () => {

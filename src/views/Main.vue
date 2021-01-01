@@ -75,10 +75,10 @@ export default {
   computed: {
     username: {
       get() {
-        return this.$store.state.username;
+        return this.$store.state.auth.username;
       },
       set(value) {
-        this.$store.commit('setUsername', value);
+        this.$store.commit('auth/setUsername', value);
       },
     },
   },
@@ -95,7 +95,7 @@ export default {
       return username;
     },
     createRoom: async function() {
-      const uid = this.$store.state.uid;
+      const uid = this.$store.state.auth.uid;
       const username = this.getUsername();
       if (!username) {
         return;
@@ -136,7 +136,7 @@ export default {
       });
     },
     joinGame: function() {
-      const uid = this.$store.state.uid;
+      const uid = this.$store.state.auth.uid;
       const username = this.getUsername();
       if (!username) {
         return;
@@ -198,11 +198,11 @@ export default {
         );
       });
     },
-    ...mapMutations([
-      'showDialog',
+    ...mapMutations('persistentDialog', [
       'showPersistentDialog',
       'hidePersistentDialog',
     ]),
+    ...mapMutations('dialog', ['showDialog']),
   },
   created: function() {
     this.showPersistentDialog({

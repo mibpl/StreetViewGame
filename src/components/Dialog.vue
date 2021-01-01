@@ -42,7 +42,7 @@ export default {
     }),
   },
   methods: {
-    ...mapMutations(['setDialogVisibility']),
+    ...mapMutations('dialog', ['setDialogVisibility']),
   },
 };
 </script>
