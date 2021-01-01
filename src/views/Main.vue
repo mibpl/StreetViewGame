@@ -20,6 +20,7 @@
             <v-btn
               id="play_btn"
               color="primary"
+              :loading="joiningGame"
               v-on:click="joinGame"
               class="white--text"
             >
@@ -32,6 +33,7 @@
             <v-btn
               v-on:click="createRoom"
               id="create_room_btn"
+              :loading="creatingRoom"
               color="primary"
               class="white--text"
             >
@@ -49,6 +51,32 @@
         <PersistentDialog />
       </v-col>
     </v-row>
+    <v-row align="center" justify="center">
+      <v-col>
+        <v-dialog v-model="creatingRoom" hide-overlay persistent width="300">
+          <v-card color="primary" dark>
+            <v-card-text>
+              Creating a room...
+              <v-progress-linear indeterminate color="white" class="mb-0">
+              </v-progress-linear>
+            </v-card-text>
+          </v-card>
+        </v-dialog>
+      </v-col>
+    </v-row>
+    <v-row align="center" justify="center">
+      <v-col>
+        <v-dialog v-model="joiningGame" hide-overlay persistent width="300">
+          <v-card color="primary" dark>
+            <v-card-text>
+              Joining a room...
+              <v-progress-linear indeterminate color="white" class="mb-0">
+              </v-progress-linear>
+            </v-card-text>
+          </v-card>
+        </v-dialog>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 
@@ -62,7 +90,6 @@ import PersistentDialog from '@/components/PersistentDialog';
 import * as firebase from 'firebase/app';
 import 'firebase/database';
 import { hri } from 'human-readable-ids';
-import maps from '@/maps_util.js';
 import { mapMutations } from 'vuex';
 import { roomObjectPath, signInGuard } from '@/firebase_utils.js';
 
@@ -71,6 +98,12 @@ export default {
   components: {
     Dialog,
     PersistentDialog,
+  },
+  data: function() {
+    return {
+      creatingRoom: false,
+      joiningGame: false,
+    };
   },
   computed: {
     username: {
@@ -95,6 +128,7 @@ export default {
       return username;
     },
     createRoom: async function() {
+      this.creatingRoom = true;
       const uid = this.$store.state.auth.uid;
       const username = this.getUsername();
       if (!username) {
@@ -103,13 +137,6 @@ export default {
       let roomId = hri.random();
       let roomObjectName = roomObjectPath(roomId);
 
-      const rounds = {};
-      for (let i = 0; i < 5; i++) {
-        rounds[i] = {
-          map_position: (await maps.aChooseRandomStreetView()).toJSON(),
-        };
-      }
-
       let roomRef = firebase.database().ref(roomObjectName);
       let roomObject = {
         chief: uid,
@@ -117,13 +144,13 @@ export default {
         finished: false,
         players: {},
         current_round: 0,
-        rounds: rounds,
       };
       roomObject.players[uid] = {
         username: username,
       };
       roomRef.set(roomObject, error => {
         if (error) {
+          this.creatingRoom = false;
           console.log(error);
           this.showDialog({
             title: 'Firebase connection error',
@@ -152,9 +179,11 @@ export default {
         });
       }
 
+      this.joiningGame = true;
       let roomRef = firebase.database().ref(roomObjectPath(roomId));
       roomRef.once('value').then(roomSnapshot => {
         if (!roomSnapshot.exists()) {
+          this.joiningGame = false;
           this.showDialog({
             title: "Room doesn't exist",
             text:
@@ -167,6 +196,7 @@ export default {
           return;
         }
         if (roomSnapshot.val().started) {
+          this.joiningGame = false;
           this.showDialog({
             title: 'Game has already started',
             text:
@@ -185,6 +215,7 @@ export default {
           },
           error => {
             if (error) {
+              this.joiningGame = false;
               console.log(error);
               this.showDialog({
                 title: 'Firebase connection error',

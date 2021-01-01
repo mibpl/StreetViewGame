@@ -27,7 +27,7 @@
       </v-col>
       <v-col cols="5">
         <LobbyOptions
-          :isChief="isChief()"
+          :isChief="isChief"
           :roomId="roomId"
           v-on:firebase_error="firebaseErrorDialog"
         />
@@ -36,24 +36,40 @@
     <v-row justify="center">
       <v-col class="text-center">
         <v-btn
-          v-if="isChief()"
-          v-on:click="startGame"
+          v-if="isChief"
+          v-on:click="tryStartingGame"
+          :loading="startingGame"
           color="primary"
           class="white--text"
         >
           Start game
         </v-btn>
-        <p v-if="!isChief()" class="font-italic">
+        <p v-if="!isChief && chiefName" class="font-italic">
           Waiting for {{ chiefName }} to start the game...
         </p>
       </v-col>
     </v-row>
     <v-row align="center" justify="center">
-      <v-col cols="2">
+      <v-col>
         <Dialog />
       </v-col>
-      <v-col cols="2">
+    </v-row>
+    <v-row align="center" justify="center">
+      <v-col>
         <PersistentDialog />
+      </v-col>
+    </v-row>
+    <v-row align="center" justify="center">
+      <v-col>
+        <v-dialog v-model="startingGame" hide-overlay persistent width="300">
+          <v-card color="primary" dark>
+            <v-card-text>
+              Generating the game...
+              <v-progress-linear indeterminate color="white" class="mb-0">
+              </v-progress-linear>
+            </v-card-text>
+          </v-card>
+        </v-dialog>
       </v-col>
     </v-row>
   </v-container>
@@ -65,7 +81,7 @@
 // In future, potential options (eg. only Poland) can be chosen here.
 import LobbyConnectedPlayers from '@/components/LobbyConnectedPlayers.vue';
 import LobbyOptions from '@/components/LobbyOptions.vue';
-import { mapMutations } from 'vuex';
+import { mapActions, mapMutations } from 'vuex';
 import * as firebase from 'firebase/app';
 import 'firebase/database';
 import Dialog from '@/components/Dialog';
@@ -82,12 +98,18 @@ export default {
       playersDbRef: null,
       chiefDbRef: null,
       startedDbRef: null,
+
+      startingGame: false,
+      forceRegenerationOnStartGame: false,
     };
   },
   methods: {
-    isChief() {
-      const uid = this.$store.state.auth.uid;
-      return uid === this.chief;
+    tryStartingGame() {
+      if (this.forceRegenerationOnStartGame) {
+        this.regenerateGame({ roomPath: roomObjectPath(this.roomId) });
+      }
+      this.startingGame = true;
+      this.ensureGameGeneratedAndStart();
     },
     startGame() {
       if (!this.startedDbRef) {
@@ -211,6 +233,21 @@ export default {
         });
       });
     },
+    async ensureGameGeneratedAndStart() {
+      this.waitToFinishGeneration()
+        .then(() => {
+          this.startGame();
+        })
+        .catch(error => {
+          this.startingGame = false;
+          this.forceRegenerationOnStartGame = true;
+          this.showDialog({
+            title: "Couldn't generate game",
+            text: 'Please try again later. ' + error,
+          });
+        });
+    },
+    ...mapActions('gameGen', ['regenerateGame', 'waitToFinishGeneration']),
     ...mapMutations('persistentDialog', [
       'showPersistentDialog',
       'hidePersistentDialog',
@@ -218,6 +255,10 @@ export default {
     ...mapMutations('dialog', ['showDialog']),
   },
   computed: {
+    isChief: function() {
+      const uid = this.$store.state.auth.uid;
+      return this.chief !== null && uid === this.chief;
+    },
     roomId: function() {
       return this.$route.params.roomId;
     },
@@ -271,6 +312,18 @@ export default {
           });
         }
       });
+  },
+  watch: {
+    // We learn if we are Chief only after getting all the data back from
+    // Firebase, we don't know this eg. on mount.
+    // At the same time, it should never happen that we were a chief and
+    // suddenly lost that function.
+    isChief: function(newVal) {
+      if (!newVal) {
+        console.error('We lost "chief" status! This should never happen!');
+      }
+      this.regenerateGame({ roomPath: roomObjectPath(this.roomId) });
+    },
   },
   unmounted: function() {
     this.cleanUp();

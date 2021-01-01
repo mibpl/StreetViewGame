@@ -40,6 +40,7 @@ import * as firebase from 'firebase/app';
 import _ from 'lodash';
 import 'firebase/database';
 import { roomObjectPath } from '@/firebase_utils.js';
+import { mapActions } from 'vuex';
 
 export default {
   name: 'LobbyOptions',
@@ -112,10 +113,21 @@ export default {
           console.log(error);
           this.$emit('firebase_error', "Couldn't modify locations.");
           this.selectedShapes = oldSelectedShapes;
+        } else {
+          this.$store.commit('gameGen/setNewShapes', { newSelectedShapes });
+          this.regenerateGame({ roomPath: roomObjectPath(this.roomId) });
         }
         this.shapesInputSyncing = false;
         this.$nextTick(() => this.$refs.shapesInput.focus());
       });
+    },
+    // Once we learn we are a chief, trigger all the computations needed.
+    isChief: function(newVal) {
+      if (!newVal) {
+        console.error('We lost "chief" status! This should never happen!');
+      }
+      // Stop watching for option changes.
+      this.roomOptionsRef.off();
     },
   },
   methods: {
@@ -139,11 +151,10 @@ export default {
         this.roomOptionsRef.off();
       }
     },
+    ...mapActions('gameGen', ['regenerateGame']),
   },
   mounted: function() {
-    if (!this.isChief) {
-      this.watchOptionsChanges();
-    }
+    this.watchOptionsChanges();
   },
   unmounted: function() {
     this.cleanUp();
