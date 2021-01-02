@@ -1,0 +1,14 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+geojson = "*"
+area = "*"
+
+[dev-packages]
+pytype = "*"
+
+[requires]
+python_version = "3.8"
