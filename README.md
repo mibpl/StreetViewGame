@@ -9,6 +9,9 @@ independently through the StreetView world and registers their own guess.
 
 All guesses are assigned a score based on the distance from the actual location.
 
+During game creation, users can choose from a pre-defined list of locations (eg.
+continents) and have all rounds generated only within those locations.
+
 ## How it works
 
 All the code in this repository is a client-side JavaScript application. The
@@ -104,6 +107,23 @@ VUE_APP_FIREBASE_APP_ID=<replace>
 # Only needed if you enabled analytics.
 VUE_APP_FIREBASE_MEASUREMENT_ID=<replace>
 ```
+
+#### Locations feature
+
+To use the locations feature, you need to have a dataset of disjoint
+geographical shapes in geojson format. This repo currently hosts such a dataset
+of continents, in `locations/data` folder.
+To create your own, you need `index.json` file that points to files hosting all
+available locations/shapes. Currently only relativePaths from index.json are
+supported but adding absolute paths should be easy.
+
+Once you have the dataset hosted, just add the link to where `index.json` is
+hosted to the config file as `VUE_APP_LOCATIONS_DIR`. Eg. to use dataset from
+this repo, add:
+```
+VUE_APP_LOCATIONS_DIR=https://raw.githubusercontent.com/mibpl/StreetViewGame/master/locations/data
+```
+(note that `index.json` itself is omitted from the url)
 
 ### Build the project locally
 
