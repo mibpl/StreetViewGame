@@ -5,46 +5,43 @@ class GoogleMapsWrapper {
     this.service = new google.maps.StreetViewService();
   }
 
-  chooseRandomPointOnSphere() {
-    const u = Math.random();
-    const v = Math.random();
-    const theta = 2.0 * Math.PI * u;
-    const phi = Math.acos(2 * v - 1);
-
-    return new google.maps.LatLng(
-      phi * (180 / Math.PI) - 90,
-      theta * (180 / Math.PI),
-    );
-  }
-
-  chooseRandomStreetView(callback) {
-    const verify_cb = (data, status) => {
-      if (status == 'OK') {
-        callback(data.location.latLng);
-      } else {
-        this.chooseRandomStreetView(callback);
-      }
-    };
-
-    const latLng = this.chooseRandomPointOnSphere();
-
-    this.service.getPanorama(
-      // google.maps.StreetViewLocationRequest
-      {
-        location: latLng,
-        preference: google.maps.StreetViewPreference.NEAREST,
-        radius: 40 * 1000, // meters
-        source: google.maps.StreetViewSource.OUTDOOR,
-      },
-      verify_cb,
-    );
-  }
-
-  async aChooseRandomStreetView() {
-    // eslint-disable-next-line no-unused-vars
-    return new Promise((resolve, _) => {
-      this.chooseRandomStreetView(resolve);
+  // Wraps call getPanorama call to be async.
+  //
+  // The original documentation:
+  // https://developers.google.com/maps/documentation/javascript/reference/street-view-service#StreetViewService
+  //
+  // @param {google.maps.StreetViewLocationRequest} request
+  //
+  // @returns {Promise<?google.maps.StreetViewPanoramaData>} The found
+  //  panorama - null if zero results were returned.
+  async asyncGetPanorama(request) {
+    return new Promise((resolve, reject) => {
+      this.service.getPanorama(request, (panoramaData, status) => {
+        if (status === 'OK') {
+          resolve(panoramaData);
+        } else if (status === 'ZERO_RESULTS') {
+          resolve(null);
+        } else {
+          reject(status);
+        }
+      });
     });
+  }
+
+  // @async
+  // @param {Array.<float>} point - Array of length two containing latitude and
+  // longitude, in geojson format (lng, lat).
+  // @returns {?google.maps.LatLng} The closest panorama or null/undefined if
+  //   not found.
+  async getClosestPanorama(point) {
+    const requestedPoint = new google.maps.LatLng(point[1], point[0]);
+    const foundPanorama = await this.asyncGetPanorama({
+      location: requestedPoint,
+      preference: google.maps.StreetViewPreference.NEAREST,
+      radius: 40 * 1000, // meters
+      source: google.maps.StreetViewSource.OUTDOOR,
+    });
+    return foundPanorama?.location?.latLng;
   }
 
   haversine_distance(p1, p2) {

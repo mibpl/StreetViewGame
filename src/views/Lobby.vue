@@ -106,7 +106,7 @@ export default {
   methods: {
     tryStartingGame() {
       if (this.forceRegenerationOnStartGame) {
-        this.regenerateGame({ roomPath: roomObjectPath(this.roomId) });
+        this.triggerGameRegeneration({ roomPath: roomObjectPath(this.roomId) });
       }
       this.startingGame = true;
       this.ensureGameGeneratedAndStart();
@@ -247,7 +247,10 @@ export default {
           });
         });
     },
-    ...mapActions('gameGen', ['regenerateGame', 'waitToFinishGeneration']),
+    ...mapActions('gameGen', [
+      'triggerGameRegeneration',
+      'waitToFinishGeneration',
+    ]),
     ...mapMutations('persistentDialog', [
       'showPersistentDialog',
       'hidePersistentDialog',
@@ -322,7 +325,7 @@ export default {
       if (!newVal) {
         console.error('We lost "chief" status! This should never happen!');
       }
-      this.regenerateGame({ roomPath: roomObjectPath(this.roomId) });
+      this.triggerGameRegeneration({ roomPath: roomObjectPath(this.roomId) });
     },
   },
   unmounted: function() {

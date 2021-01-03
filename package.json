@@ -12,6 +12,9 @@
     "publish": "gcloud builds submit --config cloudbuild.yaml --async"
   },
   "dependencies": {
+    "@turf/boolean-point-in-polygon": "^6.0.1",
+    "@turf/random": "^6.0.2",
+    "axios": "^0.21.1",
     "core-js": "^3.6.5",
     "firebase": "^7.17.2",
     "human-readable-ids": "^1.0.4",

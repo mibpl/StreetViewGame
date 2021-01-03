@@ -20,8 +20,8 @@
         <v-col>
           <v-autocomplete
             ref="shapesInput"
-            v-model="selectedShapes"
-            :items="availableShapes"
+            v-model="selectedShapeNames"
+            :items="availableShapeNames"
             :disabled="!isChief || shapesInputSyncing"
             label="Locations (empty = whole world)"
             multiple
@@ -39,8 +39,9 @@
 import * as firebase from 'firebase/app';
 import _ from 'lodash';
 import 'firebase/database';
+import { mapActions, mapMutations } from 'vuex';
 import { roomObjectPath } from '@/firebase_utils.js';
-import { mapActions } from 'vuex';
+import { fetchShapesIndex } from '@/game_gen/shapes_util.js';
 
 export default {
   name: 'LobbyOptions',
@@ -57,16 +58,8 @@ export default {
   data: function() {
     return {
       timeLimit: '',
-      selectedShapes: ['Europe', 'Yet another one'],
-      availableShapes: [
-        'Europe',
-        'USA',
-        'Poland',
-        'Asia',
-        'Another country',
-        'Yet another one',
-        'And some more',
-      ],
+      selectedShapeNames: [],
+      availableShapeNames: [],
       timeLimitSyncing: false,
       shapesInputSyncing: false,
     };
@@ -100,7 +93,7 @@ export default {
         this.$nextTick(() => this.$refs.timeLimitInput.focus());
       });
     }, 500),
-    selectedShapes: function(newSelectedShapes, oldSelectedShapes) {
+    selectedShapeNames: function(newSelectedShapes, oldSelectedShapes) {
       if (!this.isChief) {
         return;
       }
@@ -112,10 +105,12 @@ export default {
         if (error) {
           console.log(error);
           this.$emit('firebase_error', "Couldn't modify locations.");
-          this.selectedShapes = oldSelectedShapes;
+          this.selectedShapeNames = oldSelectedShapes;
         } else {
-          this.$store.commit('gameGen/setNewShapes', { newSelectedShapes });
-          this.regenerateGame({ roomPath: roomObjectPath(this.roomId) });
+          this.setSelectedShapes({ shapes: newSelectedShapes });
+          this.triggerGameRegeneration({
+            roomPath: roomObjectPath(this.roomId),
+          });
         }
         this.shapesInputSyncing = false;
         this.$nextTick(() => this.$refs.shapesInput.focus());
@@ -128,22 +123,38 @@ export default {
       }
       // Stop watching for option changes.
       this.roomOptionsRef.off();
+      this.loadAvailableShapes().then(() => {
+        this.triggerGameRegeneration({ roomPath: roomObjectPath(this.roomId) });
+      });
     },
   },
   methods: {
+    loadAvailableShapes() {
+      return fetchShapesIndex()
+        .then(shapesIndex => {
+          console.log('Fetched following shapes:', shapesIndex);
+          this.setAvailableShapes({ shapes: shapesIndex });
+          this.availableShapeNames = Object.keys(shapesIndex).sort();
+        })
+        .catch(error => {
+          console.error('Failed to fetch shapes index. ', error);
+        });
+    },
     watchOptionsChanges() {
       this.roomOptionsRef.on('value', optionsSnapshot => {
-        let newOptions = optionsSnapshot.val();
-        if (newOptions?.time_limit) {
-          this.timeLimit = newOptions.time_limit;
-        } else {
-          this.timeLimit = '';
-        }
-        if (newOptions?.shapes) {
-          this.selectedShapes = newOptions.shapes;
-        } else {
-          this.selectedShapes = [];
-        }
+        const newOptions = optionsSnapshot.val();
+
+        const newTimeLimit = newOptions?.time_limit || '';
+        this.timeLimit = newTimeLimit;
+
+        const newShapes = newOptions?.shapes || [];
+        // All selected shapes have to be in the available ones, otherwise
+        // they will be ignored.
+        // Probably a cleaner way would be to use something else than
+        // v-autocomplete object on client side.
+        this.availableShapeNames = newShapes;
+        this.selectedShapeNames = newShapes;
+        this.setSelectedShapes({ shapes: newShapes });
       });
     },
     cleanUp() {
@@ -151,7 +162,8 @@ export default {
         this.roomOptionsRef.off();
       }
     },
-    ...mapActions('gameGen', ['regenerateGame']),
+    ...mapActions('gameGen', ['triggerGameRegeneration']),
+    ...mapMutations('gameGen', ['setAvailableShapes', 'setSelectedShapes']),
   },
   mounted: function() {
     this.watchOptionsChanges();
