@@ -24,16 +24,24 @@
             </v-col>
           </v-row>
         </v-container>
-        <v-card-actions v-if="isNotLastRound()" class="card-bottom">
+        <v-card-actions class="card-bottom">
           <v-btn
             class="white--text"
             color="accent"
-            v-if="isChief()"
+            v-if="!isNotLastRound() && isChief()"
+            v-on:click="restartGame()"
+          >
+            Restart game
+          </v-btn>
+          <v-btn
+            class="white--text"
+            color="accent"
+            v-if="isNotLastRound() && isChief()"
             v-on:click="nextround()"
           >
             Next round!
           </v-btn>
-          <v-card-text v-if="!isChief()">
+          <v-card-text v-if="isNotLastRound() && !isChief()">
             <div class="font-weight-light font-italic">
               Waiting for {{ chiefName }} to start next round...
             </div>
@@ -54,6 +62,7 @@
       />
     </div>
     <PersistentDialog />
+    <Dialog />
   </div>
 </template>
 
@@ -110,6 +119,7 @@ import MarkerMap from '@/components/MarkerMap.vue';
 import RoundStatus from '@/components/RoundStatus.vue';
 import Leaderboard from '@/components/Leaderboard.vue';
 import PlayerList from '@/components/PlayerList.vue';
+import Dialog from '@/components/Dialog';
 import PersistentDialog from '@/components/PersistentDialog';
 import maps from '@/maps_util.js';
 import { roomObjectPath, signInGuard, roomGuard } from '@/firebase_utils.js';
@@ -120,6 +130,7 @@ var roomState = {};
 export default {
   name: 'Game',
   components: {
+    Dialog,
     Streets,
     MarkerMap,
     RoundStatus,
@@ -155,8 +166,7 @@ export default {
       })
       .then(() => {
         const uid = this.$store.state.auth.uid;
-        const roomId = this.$route.params.roomId;
-        return roomGuard(roomId, uid);
+        return roomGuard(this.roomId, uid);
       })
       .then(() => {
         this.hidePersistentDialog();
@@ -178,22 +188,36 @@ export default {
           // User is not in the room. Redirect them to the join link.
           this.cleanUpAndChangeView({
             name: 'join',
-            params: { roomId: this.$route.params.roomId },
+            params: { roomId: this.roomId },
           });
         }
       });
   },
   computed: {
+    roomDbRef: function() {
+      return firebase.database().ref(this.roomDbPath);
+    },
+    roomDbPath: function() {
+      return roomObjectPath(this.roomId);
+    },
+    roomId: function() {
+      return this.$route.params.roomId;
+    },
     chiefName: function() {
       return this.players[this.currentChief].username;
     },
   },
   methods: {
     refreshPage: function() {
-      const roomId = this.$route.params.roomId;
       function cb(snapshot) {
         console.log('Game Snapshot changed:', snapshot.val());
         roomState = snapshot.val();
+
+        if (!roomState.started) {
+          this.cleanUpAndChangeView({ name: 'lobby' });
+          return;
+        }
+
         this.currentChief = roomState.chief;
         this.timeLimit = roomState.options?.time_limit || null;
 
@@ -240,9 +264,7 @@ export default {
           this.timeLimit != null &&
           this.isChief()
         ) {
-          firebase
-            .database()
-            .ref(roomObjectPath(roomId))
+          this.roomDbRef
             .child('rounds')
             .child(roomState.current_round)
             .child('deadline')
@@ -252,16 +274,21 @@ export default {
         this.roundSummaries = summaries;
         this.roundsSize = roomState.rounds.length;
       }
-      firebase
-        .database()
-        .ref(roomObjectPath(roomId))
-        .on('value', cb.bind(this));
+      this.roomDbRef.on('value', cb.bind(this));
     },
     guess: function(event) {
-      const roomId = this.$route.params.roomId;
-      firebase
-        .database()
-        .ref(roomObjectPath(roomId))
+      const distance = {
+        distance: maps.haversine_distance(this.mapPosition, event.latLng),
+      };
+
+      this.roomDbRef
+        .child('rounds')
+        .child(this.round)
+        .child('summary')
+        .child(this.$store.state.auth.uid)
+        .set(distance);
+
+      this.roomDbRef
         .child('rounds')
         .child(this.round)
         .child('guesses')
@@ -269,25 +296,9 @@ export default {
         .set({
           latLng: event.latLng,
         });
-
-      const distance = {
-        distance: maps.haversine_distance(this.mapPosition, event.latLng),
-      };
-
-      firebase
-        .database()
-        .ref(roomObjectPath(roomId))
-        .child('rounds')
-        .child(this.round)
-        .child('summary')
-        .child(this.$store.state.auth.uid)
-        .set(distance);
     },
     cleanUpAndChangeView(location) {
-      firebase
-        .database()
-        .ref(roomObjectPath(this.$route.params.roomId))
-        .off();
+      this.roomDbRef.off();
       this.$router.push(location);
     },
     everyoneGuessed: function() {
@@ -309,24 +320,29 @@ export default {
       return this.$store.state.auth.uid == this.currentChief;
     },
     nextround() {
-      const roomId = this.$route.params.roomId;
       const newRound = this.round + 1;
-
-      firebase
-        .database()
-        .ref(process.env.VUE_APP_DB_PREFIX + roomId)
-        .child('current_round')
-        .set(newRound);
+      this.roomDbRef.child('current_round').set(newRound);
     },
     isNotLastRound() {
       return this.round < this.roundsSize - 1;
     },
+    async restartGame() {
+      const snapshot = await this.roomDbRef.once('value');
+      const roomState = snapshot.val();
+      roomState.started = false;
+      roomState.finished = false;
+      roomState.current_round = 0;
+      roomState.rounds = {};
+      this.roomDbRef.set(roomState).catch(error => {
+        this.showDialog({
+          title: 'Could not restart the game',
+          text: error,
+        });
+      });
+    },
     kickPlayer(event) {
       const player_uuid = event.player_uuid;
-      const roomId = this.$route.params.roomId;
-      firebase
-        .database()
-        .ref(process.env.VUE_APP_DB_PREFIX + roomId)
+      this.roomDbRef
         .child('players')
         .child(player_uuid)
         .remove();
@@ -335,6 +351,7 @@ export default {
       'showPersistentDialog',
       'hidePersistentDialog',
     ]),
+    ...mapMutations('dialog', ['showDialog']),
   },
 };
 </script>
