@@ -16,6 +16,7 @@ import dataclasses
 import geojson
 import json
 import os
+import shapely.geometry
 
 from typing import Dict, List, Sequence
 
@@ -92,10 +93,8 @@ def area_for_feature(feature: geojson.feature.Feature) -> float:
   if feature['type'] == 'Polygon':
     coordinates_list = [coordinates_list]
 
-  area = 0
-  for coords in coordinates_list:
-    area += geojson_area.polygon__area(coords)
-  return area
+  shape = shapely.geometry.asShape(feature["geometry"])
+  return shape.area
 
 
 def feature_filename(
