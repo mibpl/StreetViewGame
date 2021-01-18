@@ -186,7 +186,7 @@ def main():
       feature_collection,
       args.input_name_property,
       args.type,
-      args.outputs_prefix
+      args.outputs_prefix,
       subtract=args.subtract)
   write_processed(processed, args.index_file_location, args.output_dir)
 

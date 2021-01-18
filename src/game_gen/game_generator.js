@@ -140,7 +140,6 @@ export class GameGenerator {
 
     const threshold = Math.random() * totalArea;
 
-    console.log("treshold", threshold);
     let acc = 0;
     for (const shape of this.shapes) {
       if (this.cancelled) throw new CancelledError();
