@@ -136,15 +136,12 @@ export class GameGenerator {
       return acc + shape.area();
     }, 0);
 
-    console.log("total area", totalArea);
-
     const threshold = Math.random() * totalArea;
 
     let acc = 0;
     for (const shape of this.shapes) {
       if (this.cancelled) throw new CancelledError();
       acc += shape.area();
-      console.log("acc", acc);
       if (acc > threshold) {
         return shape;
       }

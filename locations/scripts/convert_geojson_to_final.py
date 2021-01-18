@@ -17,6 +17,7 @@ import geojson
 import json
 import os
 import shapely.geometry
+import numbers
 
 from typing import Dict, List, Optional, Sequence
 
@@ -80,10 +81,11 @@ class ProcessedShapes:
 # contain y values every second element and x values on the other places.
 def flatten_coords(coords):
   for val in coords:
-    if isinstance(val, list):
+    if isinstance(val, (list, tuple)):
       for subval in flatten_coords(val):
         yield subval
     else:
+      assert(isinstance(val, numbers.Number))
       yield val
 
 
@@ -115,7 +117,7 @@ def find_feature_by_name(
     name_property: str,
     name: str,
 ) -> geojson.feature.Feature:
-    r = list(filter(lambda f: f['properties'][name_property] == name))
+    r = list(filter(lambda f: f['properties'][name_property] == name, feature_collection['features']))
     if len(r) != 1:
       raise ValueError(f"failed to locate unique feature {name}")
     return r[0]
@@ -135,11 +137,13 @@ def process_features(
     unwanted_feature = find_feature_by_name(feature_collection, name_property, subtract)
     unwanted_shape = shapely.geometry.asShape(unwanted_feature["geometry"])
     for feature in feature_collection['features']:
-      shape = shapely.geometry.asShape(feature["geometry"]).subtract(unwanted_shape)
-      feature["geometry"] = shape.mapping()
+      shape = shapely.geometry.shape(feature["geometry"]).difference(unwanted_shape)
+      feature["geometry"] = shapely.geometry.mapping(shape)
 
   for feature in feature_collection['features']:
     name = feature['properties'][name_property]
+    if name == subtract:
+      continue
     if name in index:
       raise ValueError(f'Shape of name {name} appears multiple times in the '
                        'input file.')
