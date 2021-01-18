@@ -31,6 +31,16 @@
           ></v-autocomplete>
         </v-col>
       </v-row>
+      <v-row>
+        <v-col>
+          <v-text-field
+            ref="kmlUrlInput"
+            v-model="kmlUrl"
+            label="kml url (optional)"
+            :disabled="!isChief"
+          />
+        </v-col>
+      </v-row>
     </v-container>
   </v-card>
 </template>
@@ -59,6 +69,7 @@ export default {
     return {
       timeLimit: '',
       selectedShapeNames: [],
+      kmlUrl: '',
       availableShapeNames: [],
       timeLimitSyncing: false,
       shapesInputSyncing: false,
@@ -116,6 +127,22 @@ export default {
         this.$nextTick(() => this.$refs.shapesInput.focus());
       });
     },
+    kmlUrl: function(kmlUrlValue) {
+      if (!this.isChief) {
+        return;
+      }
+      this.roomOptionsRef.child('kml_url').set(kmlUrlValue, error => {
+        if (error) {
+          console.log(error);
+          this.$emit('firebase_error', "Couldn't modify locations.");
+        } else {
+          this.setKmlUrl(kmlUrlValue);
+          this.triggerGameRegeneration({
+            roomPath: roomObjectPath(this.roomId),
+          });
+        }
+      });
+    },
     // Once we learn we are a chief, trigger all the computations needed.
     isChief: function(newVal) {
       if (!newVal) {
@@ -155,6 +182,10 @@ export default {
         this.availableShapeNames = newShapes;
         this.selectedShapeNames = newShapes;
         this.setSelectedShapes({ shapes: newShapes });
+
+        const newKmlUrl = newOptions?.kml_url || '';
+        this.kmlUrl = newKmlUrl;
+        this.setKmlUrl(newKmlUrl);
       });
     },
     cleanUp() {
@@ -163,7 +194,7 @@ export default {
       }
     },
     ...mapActions('gameGen', ['triggerGameRegeneration']),
-    ...mapMutations('gameGen', ['setAvailableShapes', 'setSelectedShapes']),
+    ...mapMutations('gameGen', ['setAvailableShapes', 'setSelectedShapes', 'setKmlUrl']),
   },
   mounted: function() {
     this.watchOptionsChanges();
