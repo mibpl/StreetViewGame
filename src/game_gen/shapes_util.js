@@ -53,11 +53,12 @@ export class Shape {
   }
 
   randomPointWithin() {
-    for (;;) {
+    for (let i = 0; i < 1000000000; i++) {
       const point = randomPoint(1, { bbox: this.feature.bbox }).features[0];
       if (booleanPointInPolygon(point.geometry, this.feature)) {
         return point;
       }
     }
+    console.error('You are really unlucky or the bbox sucks.');
   }
 }

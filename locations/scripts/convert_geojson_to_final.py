@@ -17,36 +17,44 @@ import geojson
 import json
 import os
 import shapely.geometry
+import numbers
 
-from typing import Dict, List, Sequence
+from typing import Dict, List, Optional, Sequence
 
-parser = argparse.ArgumentParser(description='Convert single Geojson file '
-                                 'into format recognized by StreetViewGame')
 
-parser.add_argument('input_file',
-                    help='Location of the Geojson file to process.',
-                    type=str)
-parser.add_argument('output_dir',
-                    help='Location where to write all resulting shape files.',
-                    type=str)
-parser.add_argument('--index_file_location',
-                    help='Location of the index.json file to append to.',
-                    required=True,
-                    type=str)
-parser.add_argument('--outputs_prefix',
-                    help=('The prefix to put in index.json file for each '
-                          'shape.'),
-                    default='',
-                    type=str)
-parser.add_argument('--input_name_property',
-                    help=('Which of the existing properties to treat as the '
-                          'name of the shape.'),
-                    default='name',
-                    type=str)
-parser.add_argument('--type',
-                    help='What type to give to all resulting shapes.',
-                    required=True,
-                    type=str)
+def make_parser():
+  parser = argparse.ArgumentParser(description='Convert single Geojson file '
+                                  'into format recognized by StreetViewGame')
+
+  parser.add_argument('input_file',
+                      help='Location of the Geojson file to process.',
+                      type=str)
+  parser.add_argument('output_dir',
+                      help='Location where to write all resulting shape files.',
+                      type=str)
+  parser.add_argument('--index_file_location',
+                      help='Location of the index.json file to append to.',
+                      required=True,
+                      type=str)
+  parser.add_argument('--outputs_prefix',
+                      help=('The prefix to put in index.json file for each '
+                            'shape.'),
+                      default='',
+                      type=str)
+  parser.add_argument('--input_name_property',
+                      help=('Which of the existing properties to treat as the '
+                            'name of the shape.'),
+                      default='name',
+                      type=str)
+  parser.add_argument('--type',
+                      help='What type to give to all resulting shapes.',
+                      required=True,
+                      type=str)
+  parser.add_argument('--subtract',
+                      help=('Name of the feature. Its shape will be '
+                            'subtracted from all exported shapes.'),
+                      type=str)
+  return parser
 
 
 def load_geojson_and_verify(path: str) -> geojson.feature.FeatureCollection:
@@ -73,10 +81,11 @@ class ProcessedShapes:
 # contain y values every second element and x values on the other places.
 def flatten_coords(coords):
   for val in coords:
-    if isinstance(val, list):
+    if isinstance(val, (list, tuple)):
       for subval in flatten_coords(val):
         yield subval
     else:
+      assert(isinstance(val, numbers.Number))
       yield val
 
 
@@ -103,16 +112,38 @@ def feature_filename(
   return feature['properties']['name'].replace(' ', '_') + '.json'
 
 
+def find_feature_by_name(
+    feature_collection: geojson.feature.FeatureCollection,
+    name_property: str,
+    name: str,
+) -> geojson.feature.Feature:
+    r = list(filter(lambda f: f['properties'][name_property] == name, feature_collection['features']))
+    if len(r) != 1:
+      raise ValueError(f"failed to locate unique feature {name}")
+    return r[0]
+
+
 def process_features(
     feature_collection: geojson.feature.FeatureCollection,
     name_property: str,
     type_name: str,
     outputs_prefix: str,
+    subtract: Optional[str],
 ) -> ProcessedShapes:
   index = {}
   shapes = []
+
+  if subtract is not None:
+    unwanted_feature = find_feature_by_name(feature_collection, name_property, subtract)
+    unwanted_shape = shapely.geometry.asShape(unwanted_feature["geometry"])
+    for feature in feature_collection['features']:
+      shape = shapely.geometry.shape(feature["geometry"]).difference(unwanted_shape)
+      feature["geometry"] = shapely.geometry.mapping(shape)
+
   for feature in feature_collection['features']:
     name = feature['properties'][name_property]
+    if name == subtract:
+      continue
     if name in index:
       raise ValueError(f'Shape of name {name} appears multiple times in the '
                        'input file.')
@@ -153,13 +184,14 @@ def write_processed(
 
 
 def main():
-  args = parser.parse_args()
+  args = make_parser().parse_args()
   feature_collection = load_geojson_and_verify(args.input_file)
   processed = process_features(
       feature_collection,
       args.input_name_property,
       args.type,
-      args.outputs_prefix)
+      args.outputs_prefix,
+      subtract=args.subtract)
   write_processed(processed, args.index_file_location, args.output_dir)
 
 
