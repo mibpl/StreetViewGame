@@ -130,7 +130,6 @@ export class GameGenerator {
 
   getRandomShape() {
     // The areas are in meters but they should still fit in 53 bites.
-    console.log("selecting random shape out of", this.shapes);
     const totalArea = this.shapes.reduce((acc, shape) => {
       if (this.cancelled) throw new CancelledError();
       return acc + shape.area();

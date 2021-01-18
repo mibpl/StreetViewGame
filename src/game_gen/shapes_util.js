@@ -55,7 +55,6 @@ export class Shape {
   randomPointWithin() {
     for (let i = 0; i < 1000000000; i++) {
       const point = randomPoint(1, { bbox: this.feature.bbox }).features[0];
-      console.log(point);
       if (booleanPointInPolygon(point.geometry, this.feature)) {
         return point;
       }
