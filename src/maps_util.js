@@ -33,12 +33,13 @@ class GoogleMapsWrapper {
   // longitude, in geojson format (lng, lat).
   // @returns {?google.maps.LatLng} The closest panorama or null/undefined if
   //   not found.
-  async getClosestPanorama(point) {
+  async getClosestPanorama(point, radius) {
+    if (radius == undefined) radius = 40 * 1000;
     const requestedPoint = new google.maps.LatLng(point[1], point[0]);
     const foundPanorama = await this.asyncGetPanorama({
       location: requestedPoint,
       preference: google.maps.StreetViewPreference.NEAREST,
-      radius: 40 * 1000, // meters
+      radius: radius, // meters
       source: google.maps.StreetViewSource.OUTDOOR,
     });
     return foundPanorama?.location?.latLng;

@@ -6,6 +6,7 @@ const state = {
   cachedShapes: {},
   gameGenerator: null,
   startedRegenerations: [],
+  kmlUrl: null,
 };
 
 const getters = {};
@@ -14,8 +15,8 @@ const mutations = {
   setNewGameGenerator(state, { gameGenerator }) {
     state.gameGenerator = gameGenerator;
   },
-  startGameGenerator(state, { shapeNames }) {
-    state.gameGenerator.startGeneration(shapeNames);
+  startGameGenerator(state, { shapeNames, kmlUrl }) {
+    state.gameGenerator.startGeneration(shapeNames, kmlUrl);
   },
   cancelCurrentGenerator(state) {
     state.gameGenerator.cancel();
@@ -38,6 +39,9 @@ const mutations = {
   setAvailableShapes(state, { shapes }) {
     state.availableShapes = shapes;
   },
+  setKmlUrl(state, kmlUrl) {
+    state.kmlUrl = kmlUrl;
+  }
 };
 
 const actions = {
@@ -84,6 +88,7 @@ const actions = {
     }
     commit('startGameGenerator', {
       shapeNames: state.currentlySelectedShapes,
+      kmlUrl: state.kmlUrl,
     });
   },
   async waitToFinishGeneration({ state, commit }) {

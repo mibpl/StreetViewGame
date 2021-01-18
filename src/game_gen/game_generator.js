@@ -3,6 +3,7 @@ import 'firebase/database';
 import { randomPoint } from '@turf/random';
 import maps from '@/maps_util.js';
 import { fetchShape } from '@/game_gen/shapes_util';
+const parseKML = require('parse-kml');
 
 export class CancelledError extends Error {
   constructor() {
@@ -35,9 +36,13 @@ export class GameGenerator {
     this.getShapeOptsFn = getShapeOptsFn;
   }
 
-  startGeneration(shapeNames) {
-    console.log('Starting game generation...');
-    this.work = this.fetchShapesAndGenerateGame(shapeNames);
+  startGeneration(shapeNames, kmlUrl) {
+    console.log('Starting game generation...', kmlUrl);
+    if (kmlUrl != null && kmlUrl != '') {
+      this.work = this.fetchKmlAndGenerateGame(kmlUrl);
+    } else {
+      this.work = this.fetchShapesAndGenerateGame(shapeNames);
+    }
   }
 
   // Cancelling will stop the game generation potentially leaving the Firebase
@@ -55,11 +60,68 @@ export class GameGenerator {
 
   async fetchShapesAndGenerateGame(shapeNames) {
     if (this.cancelled) throw new CancelledError();
+    
     await this.fetchShapes(shapeNames);
     console.log('Generating from shapes: ', this.shapes);
 
     if (this.cancelled) throw new CancelledError();
-    await this.generateRounds();
+    await this.generateRounds(this.generateValidPosition.bind(this));
+  }
+
+  shuffleArray(array) {
+    for (var i = array.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+    }
+    return array;
+  }
+
+  async generateValidPositionFromKmlPoints() {
+    console.log('Generating from Kml');
+    if (this.kmlPoints.length == 0) {
+      return null;
+    }
+
+    let p = this.kmlPoints[0];
+    if (this.kmlPoints.length > 1) {
+      p = this.kmlPoints.pop(); 
+    }
+
+    let actualPosition = await maps.getClosestPanorama(p, 100);
+    if (actualPosition) return actualPosition;
+    return null;
+  }
+
+
+
+  async fetchKmlAndGenerateGame(kmlUrl) {
+    let points = await this.fetchKml(kmlUrl);
+
+    this.kmlPoints = this.shuffleArray(points);
+
+    if (this.cancelled) throw new CancelledError();
+    await this.generateRounds(this.generateValidPositionFromKmlPoints.bind(this));
+  }
+
+  async fetchKml(kmlUrl) {
+    if (this.cancelled) throw new CancelledError();
+    const kmlData = await parseKML.readKml(kmlUrl);
+
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(kmlData, "text/xml");
+
+    const result = xmlDoc.evaluate("//*[local-name()='coordinates']/text()", xmlDoc, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+    let points = [];
+    for(var i=0; i < result.snapshotLength; i++) {
+      const item = result.snapshotItem(i);
+      const coordsStr = item.textContent.trim().split(",");
+      const x = parseFloat(coordsStr[0]);
+      const y = parseFloat(coordsStr[1]);
+      points.push([x, y]);
+    }
+    return points;
   }
 
   async fetchShapes(shapeNames) {
@@ -98,14 +160,14 @@ export class GameGenerator {
     });
   }
 
-  async generateRounds() {
+  async generateRounds(posGenFn) {
     if (this.cancelled) throw new CancelledError();
 
     const rounds = {};
     for (let i = 0; i < this.roundNumber; i++) {
       if (this.cancelled) throw new CancelledError();
 
-      const position = await this.generateValidPosition();
+      const position = await posGenFn();
       if (position === null) {
         throw new Error(
           'Could not find enough valid points within the selected ' +
