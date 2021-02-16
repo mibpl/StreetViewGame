@@ -82,7 +82,7 @@
 import LobbyConnectedPlayers from '@/components/LobbyConnectedPlayers.vue';
 import LobbyOptions from '@/components/LobbyOptions.vue';
 import { mapActions, mapMutations } from 'vuex';
-import * as firebase from 'firebase/app';
+import firebase from 'firebase/app';
 import 'firebase/database';
 import Dialog from '@/components/Dialog';
 import PersistentDialog from '@/components/PersistentDialog';

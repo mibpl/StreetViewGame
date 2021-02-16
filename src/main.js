@@ -1,5 +1,5 @@
 import Vue from 'vue';
-import * as firebase from 'firebase/app';
+import firebase from 'firebase/app';
 import 'firebase/analytics';
 import 'firebase/auth';
 import VueClipboard from 'vue-clipboard2';
@@ -15,6 +15,7 @@ Vue.use(VueClipboard);
 
 let firebaseConfig;
 console.log(process.env.VUE_APP_DB_ENV);
+// Initialize Firebase
 if (process.env.VUE_APP_DB_ENV === 'production') {
   firebaseConfig = {
     apiKey: process.env.VUE_APP_FIREBASE_API_KEY,
@@ -26,22 +27,21 @@ if (process.env.VUE_APP_DB_ENV === 'production') {
     appId: process.env.VUE_APP_FIREBASE_APP_ID,
     measurementId: process.env.VUE_APP_FIREBASE_MEASUREMENT_ID,
   };
+
+  firebase.initializeApp(firebaseConfig);
+  firebase.analytics();
 } else {
   firebaseConfig = {
     apiKey: process.env.VUE_APP_FIREBASE_API_KEY,
-    projectId: process.env.VUE_APP_FIREBASE_PROJECT_ID,
+    projectId: 'projectId',
+    appId: 'appId',
     databaseURL: process.env.VUE_APP_FIREBASE_DATABASE_URL,
-    appId: 'placeholder',
   };
+  firebase.initializeApp(firebaseConfig);
+  firebase.auth().useEmulator(process.env.VUE_APP_DEV_AUTH_HOST);
 }
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
 
 firebase.database.enableLogging(process.env.NODE_ENV !== 'production');
-
-if (process.env.NODE_ENV === 'production') {
-  firebase.analytics();
-}
 
 maps.init();
 
