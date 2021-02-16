@@ -87,7 +87,7 @@
 // In the latter situation, also the Play button becomes active.
 import Dialog from '@/components/Dialog';
 import PersistentDialog from '@/components/PersistentDialog';
-import * as firebase from 'firebase/app';
+import firebase from 'firebase/app';
 import 'firebase/database';
 import { hri } from 'human-readable-ids';
 import { mapMutations } from 'vuex';

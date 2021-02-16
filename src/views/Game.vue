@@ -110,7 +110,7 @@
 </style>
 
 <script>
-import * as firebase from 'firebase/app';
+import firebase from 'firebase/app';
 import 'firebase/database';
 
 // This is the main view for the actual game.

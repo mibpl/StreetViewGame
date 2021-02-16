@@ -46,7 +46,7 @@
 </template>
 
 <script>
-import * as firebase from 'firebase/app';
+import firebase from 'firebase/app';
 import _ from 'lodash';
 import 'firebase/database';
 import { mapActions, mapMutations } from 'vuex';
