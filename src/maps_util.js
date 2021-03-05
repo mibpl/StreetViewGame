@@ -1,3 +1,6 @@
+import destination from '@turf/destination';
+import center from '@turf/center';
+
 const google = window.google;
 
 class GoogleMapsWrapper {
@@ -28,21 +31,84 @@ class GoogleMapsWrapper {
     });
   }
 
+  // Attempts to find a panorama within `radius_km` of point.
+  //
   // @async
-  // @param {Array.<float>} point - Array of length two containing latitude and
-  // longitude, in geojson format (lng, lat).
-  // @returns {?google.maps.LatLng} The closest panorama or null/undefined if
-  //   not found.
-  async getClosestPanorama(point, radius) {
-    if (radius == undefined) radius = 40 * 1000;
-    const requestedPoint = new google.maps.LatLng(point[1], point[0]);
+  // @param {Object} point - Object with (lat, lng) elements.
+  // @param {Object} radius_m - The search radius in meters, defaults to 40 km.
+  // @returns {Object} The closest panorama (object with {lat, lng} elements)
+  // or null/undefined if not found.
+  async getClosestPanorama(point, radius_m) {
+    if (radius_m == undefined) radius_m = 40 * 1000;
+    const requestedPoint = new google.maps.LatLng(point.lat, point.lng);
     const foundPanorama = await this.asyncGetPanorama({
       location: requestedPoint,
       preference: google.maps.StreetViewPreference.NEAREST,
-      radius: radius, // meters
+      radius: radius_m, // meters
       source: google.maps.StreetViewSource.OUTDOOR,
     });
-    return foundPanorama?.location?.latLng;
+    if (foundPanorama?.location?.latLng != null) {
+      return foundPanorama?.location?.latLng.toJSON();
+    }
+    return null;
+  }
+
+  // Attempts to jump to a panorama at most `distance_km` away from `point`
+  // in the direction `bearing_deg`. We try to find a point exactly
+  // `distance_km` away, but if that fails, we make a total of 10 attempts
+  // to jump to any point in the direction using a linear distance backoff.
+  //
+  // @async
+  // @param {Object} point - Object with {lat, lng} elements - the starting point.
+  // @param {float} distance_km - Distance of the jump in kilometers.
+  // @param {float} bearing_deg - Compass bearing (0 meaning north, 90 east, -90 west).
+  // @returns {Object} An object containing two fields:
+  // `destination`: the closest panorama (as an object with {lat, lng} elements),
+  // `distance_km`: the distance of the found point wrt. the starting point.
+  // If no panorama was found, will return null instead.
+  async jumpByDistanceAndBearing(point, distance_km, bearing_deg) {
+		// (lng, lat) is the turf coordinate format.
+    const num_attempts = 10;
+    let panorama = null;
+    for (let attempt = 0; attempt < num_attempts; attempt++) {
+      let fraction = (num_attempts - attempt) / num_attempts;
+      const jump_point_turf = destination([point.lng, point.lat], distance_km * fraction, bearing_deg).geometry.coordinates;
+      // We first attempt to jump by distance_km, searching in a radius of 0.5 * distance_km.
+      // If that fails we attempt to back off each time by 1/num_attempts of distance_km.
+      // The radius gets progressively narrower to maintain the same distance-to-search radius proportion.
+      const radius_m = distance_km * 0.5 * fraction * 1000;
+      console.log("jumpByDistanceAndBearing, searching at distance: ", distance_km * fraction, " with radius: ", radius_m);
+      panorama = await this.getClosestPanorama({lat: jump_point_turf[1], lng: jump_point_turf[0]}, radius_m);
+      if (panorama != null) {
+        break;
+      }
+    }
+    if (panorama != null) {
+      console.log("jumpByDistanceAndBearing found: ", panorama);
+      return {
+        destination: {lat: panorama.lat, lng: panorama.lng},
+        distance_km: this.haversine_distance(point, panorama)
+      };
+    }
+    return null;
+  }
+
+  // Returns an average of the given points, which can be used as an approximate center
+  // point.
+  //
+  // @async
+  // @param {Array<Object>} point - Array of objects with {lat, lng} elements.
+  // @returns {Object} The mean of the given points, as an object with {lat, lng}
+  // elements.
+  centerPoint(input_points) {
+    let result = {lat: 0, lng: 0};
+    for (const point of input_points) {
+      result.lat += point.lat;
+      result.lng += point.lng;
+    }
+    result.lat /= input_points.length;
+    result.lng /= input_points.length;
+    return {lat: result.lat, lng: result.lng};
   }
 
   haversine_distance(p1, p2) {
