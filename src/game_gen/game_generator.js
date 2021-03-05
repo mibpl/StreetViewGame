@@ -89,7 +89,7 @@ export class GameGenerator {
       p = this.kmlPoints.pop(); 
     }
 
-    let actualPosition = await maps.getClosestPanorama(p, 100);
+    let actualPosition = await maps.getClosestPanorama({lat: p[1], lng: p[0]}, 100);
     if (actualPosition) return actualPosition;
     return null;
   }
@@ -175,7 +175,7 @@ export class GameGenerator {
         );
       }
       rounds[i] = {
-        map_position: position.toJSON(),
+        map_position: position,
       };
     }
 
@@ -220,8 +220,9 @@ export class GameGenerator {
         point = randomPoint(1).features[0];
       }
       if (this.cancelled) throw new CancelledError();
+      const coords = point.geometry.coordinates;
       let actualPosition = await maps.getClosestPanorama(
-        point.geometry.coordinates,
+        {lat: coords[1], lng: coords[0]}
       );
       if (actualPosition) {
         return actualPosition;
