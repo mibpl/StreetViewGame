@@ -54,7 +54,10 @@
       v-bind:playerGuessStatus="players"
       v-bind:isChief="isChief()"
     />
-    <Streets v-bind:mapPosition="mapPosition" />
+    <Streets
+      v-bind:initialMapPosition="mapPosition"
+      v-bind:jumpButtonsEnabled=false
+    />
     <div id="map-overlay">
       <MarkerMap
         @on-guess="guess($event)"
