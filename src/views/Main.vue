@@ -144,6 +144,9 @@ export default {
         finished: false,
         players: {},
         current_round: 0,
+        options: {
+          game_mode: "classic",
+        },
       };
       roomObject.players[uid] = {
         username: username,

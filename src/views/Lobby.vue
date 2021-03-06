@@ -213,6 +213,7 @@ export default {
           }
           this.chief = chiefSnapshot.val();
         });
+        let gameModeDbRef = roomRef.child('options').child('game_mode');
         this.startedDbRef = roomRef.child('started');
         this.startedDbRef.on('value', startedSnapshot => {
           if (!startedSnapshot.exists()) {
@@ -225,9 +226,19 @@ export default {
             });
           }
           if (startedSnapshot.val() === true) {
-            this.cleanUpAndChangeView({
-              name: 'game',
-              params: { roomId: this.$route.params.roomId },
+            gameModeDbRef.once('value').then(gameMode => {
+              if (gameMode.val() != 'classic' && gameMode.val() != 'rendezvous') {
+                this.showDialog({
+                  title: `Game mode ${gameMode.val()} unknown`,
+                  text:
+                    "Room you are trying to access doesn't have a game mode set. " +
+                    'Create a new room.',
+                });
+              }
+              this.cleanUpAndChangeView({
+                name: gameMode.val(),
+                params: { roomId: this.$route.params.roomId },
+              });
             });
           }
         });
