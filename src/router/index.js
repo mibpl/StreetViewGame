@@ -25,12 +25,20 @@ const routes = [
       import(/* webpackChunkName: "lobby" */ '@/views/Lobby.vue'),
   },
   {
-    path: '/game/:roomId',
-    name: 'game',
+    path: '/classic/:roomId',
+    name: 'classic',
     // route level code-splitting
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "game" */ '@/views/Game.vue'),
+    component: () => import(/* webpackChunkName: "game" */ '@/views/ClassicGame.vue'),
+  },
+  {
+    path: '/rendezvous/:roomId',
+    name: 'rendezvous',
+    // route level code-splitting
+    // this generates a separate chunk (about.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () => import(/* webpackChunkName: "rendezvous" */ '@/views/RendezvousGame.vue'),
   },
   {
     path: '*',
