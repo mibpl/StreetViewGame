@@ -266,6 +266,7 @@ export default {
       'showPersistentDialog',
       'hidePersistentDialog',
     ]),
+    ...mapMutations('gameGen', ['setPlayers']),
     ...mapMutations('dialog', ['showDialog']),
   },
   computed: {
@@ -337,6 +338,14 @@ export default {
         console.error('We lost "chief" status! This should never happen!');
       }
       this.triggerGameRegeneration({ roomPath: roomObjectPath(this.roomId) });
+    },
+    connected_players: function(newVal) {
+      this.setPlayers(this.connected_players);
+      if (!this.isChief) {
+        this.triggerGameRegeneration({
+          roomPath: roomObjectPath(this.roomId),
+        });
+      }
     },
   },
   unmounted: function() {

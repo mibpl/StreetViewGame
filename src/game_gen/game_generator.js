@@ -36,12 +36,17 @@ export class GameGenerator {
     this.getShapeOptsFn = getShapeOptsFn;
   }
 
-  startGeneration(shapeNames, kmlUrl) {
-    console.log('Starting game generation...', kmlUrl);
+  startGeneration(gameMode, shapeNames, kmlUrl, players) {
+    console.log(
+      'Starting game generation. gameMode: ', gameMode,
+      'shapeNames: ', shapeNames, 'kmlUrl: ', kmlUrl,
+      'players: ', players, 'generator: ', this);
     if (kmlUrl != null && kmlUrl != '') {
-      this.work = this.fetchKmlAndGenerateGame(kmlUrl);
+      this.work = this.fetchKmlAndGenerateGame(
+        gameMode, kmlUrl, players);
     } else {
-      this.work = this.fetchShapesAndGenerateGame(shapeNames);
+      this.work = this.fetchShapesAndGenerateGame(
+        gameMode, shapeNames, players);
     }
   }
 
@@ -58,14 +63,15 @@ export class GameGenerator {
     await this.work;
   }
 
-  async fetchShapesAndGenerateGame(shapeNames) {
+  async fetchShapesAndGenerateGame(gameMode, shapeNames, players) {
     if (this.cancelled) throw new CancelledError();
     
     await this.fetchShapes(shapeNames);
     console.log('Generating from shapes: ', this.shapes);
 
     if (this.cancelled) throw new CancelledError();
-    await this.generateRounds(this.generateValidPosition.bind(this));
+    await this.generateGameState(
+      gameMode, players, this.generateValidPosition.bind(this));
   }
 
   shuffleArray(array) {
@@ -96,13 +102,15 @@ export class GameGenerator {
 
 
 
-  async fetchKmlAndGenerateGame(kmlUrl) {
+  async fetchKmlAndGenerateGame(gameMode, kmlUrl, players) {
     let points = await this.fetchKml(kmlUrl);
 
     this.kmlPoints = this.shuffleArray(points);
 
     if (this.cancelled) throw new CancelledError();
-    await this.generateRounds(this.generateValidPositionFromKmlPoints.bind(this));
+    await this.generateGameState(
+      gameMode, players,
+       this.generateValidPositionFromKmlPoints.bind(this));
   }
 
   async fetchKml(kmlUrl) {
@@ -160,7 +168,67 @@ export class GameGenerator {
     });
   }
 
-  async generateRounds(posGenFn) {
+  async generateGameState(gameMode, players, posGenFn) {
+    if (gameMode == "classic") {
+      await this.generateClassicGameState(posGenFn);
+    } else if (gameMode == "rendezvous") {
+      await this.generateRendezvousGameState(players, posGenFn);
+    } else {
+      console.log("Unrecognized gameMode: ", gameMode);
+    }
+  }
+
+  // The player state for Rendezvous is encapsulated in the
+  // rendezvous_data field in the database. The structure is as follows:
+  // * rendezvous_data:
+  //   * player_data: a dictionary mapping player_ids to their position
+  //                  and history.
+  //     * [player_id]: the key used to identify players in geoguessr.
+  //       * map_position: object with {lat, lng} fields, storing the
+  //                       initial/current player position.
+  //       * position_history: array of objects with {lat, lng} fields,
+  //                           storing the points the player visited, in order.
+  //   * finished: a boolean indicating if the game is finished and a result
+  //               screen should be shown to all players.
+  async generateRendezvousGameState(players, posGenFn) {
+    console.log("Generating Rendezvous game state for:", players);
+    if (this.cancelled) throw new CancelledError();
+
+    const rendezvous_player_data = {};
+    let i = 0;
+    for (const [player, player_name] of Object.entries(players)) {
+      if (this.cancelled) throw new CancelledError();
+
+      const position = await posGenFn();
+      if (position === null) {
+        throw new Error(
+          'Could not find enough valid points within the selected ' +
+            'locations. Try different location settings.',
+        );
+      }
+      rendezvous_player_data[player] = {
+        map_position: position,
+        position_history: [position],
+      };
+    }
+    const rendezvous_data = {
+      player_data: rendezvous_player_data,
+      finished: false,
+    };
+
+    if (this.cancelled) throw new CancelledError();
+
+    try {
+      const roomRef = firebase.database().ref(this.roomPath);
+      await roomRef.child('rendezvous_data').set(rendezvous_data);
+    } catch (error) {
+      console.error('Failed to write player locations to db with error: ', error);
+      throw new Error('Cannot connect to Firebase.');
+    }
+  }
+
+  async generateClassicGameState(posGenFn) {
+    console.log("Generating Classic game state");
     if (this.cancelled) throw new CancelledError();
 
     const rounds = {};
