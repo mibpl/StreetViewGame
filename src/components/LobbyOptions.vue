@@ -2,7 +2,7 @@
   <v-card outlined>
     <v-card-title>Game options</v-card-title>
     <v-container>
-      <v-container v-if="showGameModePicker">
+      <v-container v-if="getRendezvousEnabled()">
         <v-row>
           <v-col>
             <v-select
@@ -66,7 +66,7 @@
 import firebase from 'firebase/app';
 import _ from 'lodash';
 import 'firebase/database';
-import { mapActions, mapMutations } from 'vuex';
+import { mapGetters, mapActions, mapMutations } from 'vuex';
 import { roomObjectPath } from '@/firebase_utils.js';
 import { fetchShapesIndex } from '@/game_gen/shapes_util.js';
 
@@ -95,7 +95,6 @@ export default {
       availableShapeNames: [],
       timeLimitSyncing: false,
       shapesInputSyncing: false,
-      showGameModePicker: false,
     };
   },
   computed: {
@@ -246,6 +245,7 @@ export default {
         this.playersDbRef.off();
       }
     },
+    ...mapGetters('experiment', ['getRendezvousEnabled']),
     ...mapActions('gameGen', ['triggerGameRegeneration']),
     ...mapMutations('gameGen', [
       'setAvailableShapes', 'setSelectedShapes', 'setKmlUrl',
