@@ -2,6 +2,23 @@
   <v-card outlined>
     <v-card-title>Game options</v-card-title>
     <v-container>
+      <v-container v-if="showGameModePicker">
+        <v-row>
+          <v-col>
+            <v-select
+              v-model="gameMode"
+              :hint="gameModeProperties[gameMode].hint"
+              :items="Object.keys(gameModeProperties)"
+              item-text="mode"
+              item-value="mode"
+              label="Select game mode"
+              persistent-hint
+              return-object
+              single-line
+            ></v-select>
+          </v-col>
+        </v-row>
+      </v-container>
       <v-row>
         <v-col>
           <v-text-field
@@ -67,12 +84,18 @@ export default {
   },
   data: function() {
     return {
+      gameMode: 'classic',
+      gameModeProperties: {
+        classic: {hint: 'Players start at the same spot and must find their location on a map.'},
+        rendezvous: {hint: 'Players start at random locations and must rendezvous to a single location.'}
+      },
       timeLimit: '',
       selectedShapeNames: [],
       kmlUrl: '',
       availableShapeNames: [],
       timeLimitSyncing: false,
       shapesInputSyncing: false,
+      showGameModePicker: false,
     };
   },
   computed: {
@@ -81,6 +104,12 @@ export default {
         .database()
         .ref(roomObjectPath(this.roomId))
         .child('options');
+    },
+    playersDbRef: function() {
+      return firebase
+        .database()
+        .ref(roomObjectPath(this.roomId))
+        .child('players');
     },
   },
   watch: {
@@ -143,6 +172,23 @@ export default {
         }
       });
     },
+    gameMode: function(gameModeValue) {
+      if (!this.isChief) {
+        return;
+      }
+      this.roomOptionsRef.child('game_mode').set(gameModeValue, error => {
+        if (error) {
+          console.log(error);
+          this.$emit('firebase_error', "Couldn't modify game mode.");
+        }
+         else {
+          this.setGameMode(gameModeValue);
+          this.triggerGameRegeneration({
+            roomPath: roomObjectPath(this.roomId),
+          });
+        }
+      });
+    },
     // Once we learn we are a chief, trigger all the computations needed.
     isChief: function(newVal) {
       if (!newVal) {
@@ -186,15 +232,24 @@ export default {
         const newKmlUrl = newOptions?.kml_url || '';
         this.kmlUrl = newKmlUrl;
         this.setKmlUrl(newKmlUrl);
+
+        const newGameMode = newOptions?.game_mode || '';
+        this.gameMode = newGameMode;
+        this.setGameMode(newGameMode);
       });
     },
     cleanUp() {
       if (this.roomOptionsRef) {
         this.roomOptionsRef.off();
       }
+      if (this.playersDbRef) {
+        this.playersDbRef.off();
+      }
     },
     ...mapActions('gameGen', ['triggerGameRegeneration']),
-    ...mapMutations('gameGen', ['setAvailableShapes', 'setSelectedShapes', 'setKmlUrl']),
+    ...mapMutations('gameGen', [
+      'setAvailableShapes', 'setSelectedShapes', 'setKmlUrl',
+      'setGameMode', 'setPlayers']),
   },
   mounted: function() {
     this.watchOptionsChanges();
