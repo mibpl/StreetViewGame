@@ -62,6 +62,7 @@
       <MarkerMap
         @on-guess="guess($event)"
         v-bind:deadlineTimestamp="deadlineTimestamp"
+        v-bind:guessingEnabled=true
       />
     </div>
     <PersistentDialog />

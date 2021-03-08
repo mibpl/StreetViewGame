@@ -88,6 +88,13 @@ import Dialog from '@/components/Dialog';
 import PersistentDialog from '@/components/PersistentDialog';
 import { roomObjectPath, signInGuard, roomGuard } from '@/firebase_utils.js';
 
+export class GameCreationError extends Error {
+  constructor() {
+    super('Failed to create the game.');
+    this.name = 'GameCreationError';
+  }
+}
+
 export default {
   name: 'Lobby',
   data: function() {
@@ -98,6 +105,7 @@ export default {
       playersDbRef: null,
       chiefDbRef: null,
       startedDbRef: null,
+      gameModeDbRef: null,
 
       startingGame: false,
       forceRegenerationOnStartGame: false,
@@ -110,23 +118,6 @@ export default {
       }
       this.startingGame = true;
       this.ensureGameGeneratedAndStart();
-    },
-    startGame() {
-      if (!this.startedDbRef) {
-        console.log('Trying to start game before "created"');
-      }
-      this.startedDbRef.set(true, error => {
-        if (error) {
-          console.log(error);
-          this.showDialog({
-            title: 'Connection Error',
-            text:
-              'There was a problem with connection to Firebase :( ' +
-              'Try again later.',
-          });
-          return;
-        }
-      });
     },
     cleanUp() {
       if (this.playersDbRef) {
@@ -213,7 +204,7 @@ export default {
           }
           this.chief = chiefSnapshot.val();
         });
-        let gameModeDbRef = roomRef.child('options').child('game_mode');
+        this.gameModeDbRef = roomRef.child('options').child('game_mode');
         this.startedDbRef = roomRef.child('started');
         this.startedDbRef.on('value', startedSnapshot => {
           if (!startedSnapshot.exists()) {
@@ -226,7 +217,7 @@ export default {
             });
           }
           if (startedSnapshot.val() === true) {
-            gameModeDbRef.once('value').then(gameMode => {
+            this.gameModeDbRef.once('value').then(gameMode => {
               if (gameMode.val() != 'classic' && gameMode.val() != 'rendezvous') {
                 this.showDialog({
                   title: `Game mode ${gameMode.val()} unknown`,
@@ -248,18 +239,48 @@ export default {
       });
     },
     async ensureGameGeneratedAndStart() {
-      this.waitToFinishGeneration()
-        .then(() => {
-          this.startGame();
-        })
-        .catch(error => {
+      try {
+        await this.waitToFinishGeneration()
+      } catch(error) {
+        this.startingGame = false;
+        this.forceRegenerationOnStartGame = true;
+        this.showDialog({
+          title: "Couldn't generate game",
+          text: 'Please try again later. ' + error,
+        });
+        return;
+      }
+      if (!this.startedDbRef || !this.gameModeDbRef) {
+        console.log('Trying to start game before "created"');
+        return;
+      }
+      let game_mode = await this.gameModeDbRef.once('value');
+      if (game_mode.val() == "rendezvous") {
+        if (Object.keys(this.connected_players).length < 2) {
           this.startingGame = false;
           this.forceRegenerationOnStartGame = true;
           this.showDialog({
-            title: "Couldn't generate game",
-            text: 'Please try again later. ' + error,
+            title: 'Rendezvous needs at least 2 players',
+            text:
+              "Currently no single-player mode is implemented. Sorry :(",
           });
+          return;
+        }
+      }
+      try {
+        this.startedDbRef.set(true);
+      } catch(error) {
+        this.startingGame = false;
+        this.forceRegenerationOnStartGame = true;
+        console.log(error);
+        this.showDialog({
+          title: 'Connection Error',
+          text:
+            'There was a problem with connection to Firebase :( ' +
+            'Try again later.',
         });
+        return;
+      }
     },
     ...mapActions('gameGen', [
       'triggerGameRegeneration',
