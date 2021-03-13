@@ -104,6 +104,7 @@
 
 <script>
 import maps from '@/maps_util.js';
+import { mapActions, mapMutations } from 'vuex';
 
 /*global google*/
 
@@ -152,10 +153,25 @@ export default {
           new_position.distance_km,
         );
         this.panorama.setPosition(new_position.destination);
+        if (distance_km * 0.9 < new_position.distance_km && new_position.distance_km < distance_km * 1.1) {
+          this.showToast({
+            text: `Jumped ${new_position.distance_km.toFixed(2)}km`,
+          });
+        } else {
+          this.showToast({
+            text: `Jump was imprecise: ${new_position.distance_km.toFixed(2)}km`,
+            color: "orange",
+          });
+        }
       } else {
         console.log("Can't find panorama in this direction.");
+        this.showToast({
+          text: "Failed to find panorama in this direction",
+          color: "red",
+        });
       }
     },
+    ...mapActions('toast', ['showToast']),
   },
   mounted: function() {
     this.panorama = new google.maps.StreetViewPanorama(
