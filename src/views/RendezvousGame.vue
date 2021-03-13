@@ -38,6 +38,7 @@
     </div>
     <PersistentDialog />
     <Dialog />
+    <Toast />
   </div>
 </template>
 
@@ -94,6 +95,7 @@ import PlayerList from '@/components/PlayerList.vue';
 import Dialog from '@/components/Dialog';
 import PersistentDialog from '@/components/PersistentDialog';
 import RendezvousResults from '@/components/RendezvousResults';
+import Toast from '@/components/Toast';
 import { roomObjectPath, signInGuard, roomGuard } from '@/firebase_utils.js';
 import { mapMutations } from 'vuex';
 import maps_util from '@/maps_util';
@@ -109,6 +111,7 @@ export default {
     PlayerList,
     PersistentDialog,
     RendezvousResults,
+    Toast,
   },
   data: function() {
     return {
