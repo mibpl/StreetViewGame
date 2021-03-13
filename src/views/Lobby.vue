@@ -165,7 +165,7 @@ export default {
             text:
               "Room you are trying to join doesn't exist. " +
               'Use correct link or create a new room.',
-            confirmAction: function() {
+            confirmAction: () => {
               this.cleanUpAndChangeView({ name: 'main' });
             },
           });
@@ -188,7 +188,7 @@ export default {
             this.showDialog({
               title: 'The game was deleted',
               text: 'Try to join another one or create your own',
-              confirmAction: function() {
+              confirmAction: () => {
                 this.cleanUpAndChangeView({ name: 'main' });
               },
             });
@@ -206,7 +206,7 @@ export default {
             this.showDialog({
               title: 'The game was deleted',
               text: 'Try to join another one or create your own',
-              confirmAction: function() {
+              confirmAction: () => {
                 this.cleanUpAndChangeView({ name: 'main' });
               },
             });
@@ -220,7 +220,7 @@ export default {
             this.showDialog({
               title: 'The game was deleted',
               text: 'Try to join another one or create your own',
-              confirmAction: function() {
+              confirmAction: () => {
                 this.cleanUpAndChangeView({ name: 'main' });
               },
             });
@@ -233,6 +233,9 @@ export default {
                   text:
                     "Room you are trying to access doesn't have a game mode set. " +
                     'Create a new room.',
+                  confirmAction: () => {
+                    this.cleanUpAndChangeView({ name: 'main' });
+                  },
                 });
               }
               this.cleanUpAndChangeView({
@@ -314,7 +317,7 @@ export default {
             text:
               "Room you are trying to access doesn't exist. " +
               'Use correct link or create a new room.',
-            confirmAction: function() {
+            confirmAction: () => {
               this.cleanUpAndChangeView({ name: 'main' });
             },
           });
