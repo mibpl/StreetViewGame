@@ -1,5 +1,4 @@
 import destination from '@turf/destination';
-import center from '@turf/center';
 
 const google = window.google;
 
@@ -67,27 +66,39 @@ class GoogleMapsWrapper {
   // `distance_km`: the distance of the found point wrt. the starting point.
   // If no panorama was found, will return null instead.
   async jumpByDistanceAndBearing(point, distance_km, bearing_deg) {
-		// (lng, lat) is the turf coordinate format.
+    // (lng, lat) is the turf coordinate format.
     const num_attempts = 10;
     let panorama = null;
     for (let attempt = 0; attempt < num_attempts; attempt++) {
       let fraction = (num_attempts - attempt) / num_attempts;
-      const jump_point_turf = destination([point.lng, point.lat], distance_km * fraction, bearing_deg).geometry.coordinates;
-      // We first attempt to jump by distance_km, searching in a radius of 0.5 * distance_km.
+      const jump_point_turf = destination(
+        [point.lng, point.lat],
+        distance_km * fraction,
+        bearing_deg,
+      ).geometry.coordinates;
+      // We first attempt to jump by distance_km, searching in a radius of 0.1 * distance_km.
       // If that fails we attempt to back off each time by 1/num_attempts of distance_km.
       // The radius gets progressively narrower to maintain the same distance-to-search radius proportion.
-      const radius_m = distance_km * 0.5 * fraction * 1000;
-      console.log("jumpByDistanceAndBearing, searching at distance: ", distance_km * fraction, " with radius: ", radius_m);
-      panorama = await this.getClosestPanorama({lat: jump_point_turf[1], lng: jump_point_turf[0]}, radius_m);
+      const radius_m = distance_km * 0.1 * fraction * 1000;
+      console.log(
+        'jumpByDistanceAndBearing, searching at distance: ',
+        distance_km * fraction,
+        ' with radius: ',
+        radius_m,
+      );
+      panorama = await this.getClosestPanorama(
+        { lat: jump_point_turf[1], lng: jump_point_turf[0] },
+        radius_m,
+      );
       if (panorama != null) {
         break;
       }
     }
     if (panorama != null) {
-      console.log("jumpByDistanceAndBearing found: ", panorama);
+      console.log('jumpByDistanceAndBearing found: ', panorama);
       return {
-        destination: {lat: panorama.lat, lng: panorama.lng},
-        distance_km: this.haversine_distance(point, panorama)
+        destination: { lat: panorama.lat, lng: panorama.lng },
+        distance_km: this.haversine_distance(point, panorama),
       };
     }
     return null;
@@ -101,14 +112,14 @@ class GoogleMapsWrapper {
   // @returns {Object} The mean of the given points, as an object with {lat, lng}
   // elements.
   centerPoint(input_points) {
-    let result = {lat: 0, lng: 0};
+    let result = { lat: 0, lng: 0 };
     for (const point of input_points) {
       result.lat += point.lat;
       result.lng += point.lng;
     }
     result.lat /= input_points.length;
     result.lng /= input_points.length;
-    return {lat: result.lat, lng: result.lng};
+    return result;
   }
 
   haversine_distance(p1, p2) {

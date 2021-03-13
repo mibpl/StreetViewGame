@@ -41,7 +41,7 @@ const mutations = {
   },
   setKmlUrl(state, kmlUrl) {
     state.kmlUrl = kmlUrl;
-  }
+  },
 };
 
 const actions = {
