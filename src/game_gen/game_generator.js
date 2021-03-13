@@ -60,7 +60,7 @@ export class GameGenerator {
 
   async fetchShapesAndGenerateGame(shapeNames) {
     if (this.cancelled) throw new CancelledError();
-    
+
     await this.fetchShapes(shapeNames);
     console.log('Generating from shapes: ', this.shapes);
 
@@ -70,10 +70,10 @@ export class GameGenerator {
 
   shuffleArray(array) {
     for (var i = array.length - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
-        var temp = array[i];
-        array[i] = array[j];
-        array[j] = temp;
+      var j = Math.floor(Math.random() * (i + 1));
+      var temp = array[i];
+      array[i] = array[j];
+      array[j] = temp;
     }
     return array;
   }
@@ -86,15 +86,16 @@ export class GameGenerator {
 
     let p = this.kmlPoints[0];
     if (this.kmlPoints.length > 1) {
-      p = this.kmlPoints.pop(); 
+      p = this.kmlPoints.pop();
     }
 
-    let actualPosition = await maps.getClosestPanorama({lat: p[1], lng: p[0]}, 100);
+    let actualPosition = await maps.getClosestPanorama(
+      { lat: p[1], lng: p[0] },
+      100,
+    );
     if (actualPosition) return actualPosition;
     return null;
   }
-
-
 
   async fetchKmlAndGenerateGame(kmlUrl) {
     let points = await this.fetchKml(kmlUrl);
@@ -102,7 +103,9 @@ export class GameGenerator {
     this.kmlPoints = this.shuffleArray(points);
 
     if (this.cancelled) throw new CancelledError();
-    await this.generateRounds(this.generateValidPositionFromKmlPoints.bind(this));
+    await this.generateRounds(
+      this.generateValidPositionFromKmlPoints.bind(this),
+    );
   }
 
   async fetchKml(kmlUrl) {
@@ -110,13 +113,19 @@ export class GameGenerator {
     const kmlData = await parseKML.readKml(kmlUrl);
 
     const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(kmlData, "text/xml");
+    const xmlDoc = parser.parseFromString(kmlData, 'text/xml');
 
-    const result = xmlDoc.evaluate("//*[local-name()='coordinates']/text()", xmlDoc, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+    const result = xmlDoc.evaluate(
+      "//*[local-name()='coordinates']/text()",
+      xmlDoc,
+      null,
+      XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE,
+      null,
+    );
     let points = [];
-    for(var i=0; i < result.snapshotLength; i++) {
+    for (var i = 0; i < result.snapshotLength; i++) {
       const item = result.snapshotItem(i);
-      const coordsStr = item.textContent.trim().split(",");
+      const coordsStr = item.textContent.trim().split(',');
       const x = parseFloat(coordsStr[0]);
       const y = parseFloat(coordsStr[1]);
       points.push([x, y]);
@@ -221,9 +230,10 @@ export class GameGenerator {
       }
       if (this.cancelled) throw new CancelledError();
       const coords = point.geometry.coordinates;
-      let actualPosition = await maps.getClosestPanorama(
-        {lat: coords[1], lng: coords[0]}
-      );
+      let actualPosition = await maps.getClosestPanorama({
+        lat: coords[1],
+        lng: coords[0],
+      });
       if (actualPosition) {
         return actualPosition;
       }
