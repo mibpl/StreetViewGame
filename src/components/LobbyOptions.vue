@@ -6,9 +6,11 @@
         <v-row>
           <v-col>
             <v-select
+              ref="gameMode"
               v-model="gameMode"
               :hint="gameModeProperties[gameMode].hint"
               :items="Object.keys(gameModeProperties)"
+              :disabled="!isChief || gameModeSyncing"
               item-text="mode"
               item-value="mode"
               label="Select game mode"
@@ -86,8 +88,14 @@ export default {
     return {
       gameMode: 'classic',
       gameModeProperties: {
-        classic: {hint: 'Players start at the same spot and must find their location on a map.'},
-        rendezvous: {hint: 'Players start at random locations and must rendezvous to a single location.'}
+        classic: {
+          hint:
+            'Players start at the same spot and must find their location on a map.',
+        },
+        rendezvous: {
+          hint:
+            'Players start at random locations and must rendezvous to a single location.',
+        },
       },
       timeLimit: '',
       selectedShapeNames: [],
@@ -95,6 +103,7 @@ export default {
       availableShapeNames: [],
       timeLimitSyncing: false,
       shapesInputSyncing: false,
+      gameModeSyncing: false,
       showGameModePicker: false,
     };
   },
@@ -125,12 +134,14 @@ export default {
       this.timeLimitSyncing = true;
       this.roomOptionsRef.child('time_limit').set(newTimeLimit, error => {
         if (error) {
-          console.log(error);
+          console.error(error);
           this.$emit('firebase_error', "Couldn't modify time limit.");
           this.timeLimit = oldTimeLimit;
         }
-        this.timeLimitSyncing = false;
-        this.$nextTick(() => this.$refs.timeLimitInput.focus());
+        this.$nextTick(() => {
+          this.timeLimitSyncing = false;
+          this.$refs.timeLimitInput.focus();
+        });
       });
     }, 500),
     selectedShapeNames: function(newSelectedShapes, oldSelectedShapes) {
@@ -143,7 +154,7 @@ export default {
       this.shapesInputSyncing = true;
       this.roomOptionsRef.child('shapes').set(newSelectedShapes, error => {
         if (error) {
-          console.log(error);
+          console.error(error);
           this.$emit('firebase_error', "Couldn't modify locations.");
           this.selectedShapeNames = oldSelectedShapes;
         } else {
@@ -152,8 +163,10 @@ export default {
             roomPath: roomObjectPath(this.roomId),
           });
         }
-        this.shapesInputSyncing = false;
-        this.$nextTick(() => this.$refs.shapesInput.focus());
+        this.$nextTick(() => {
+          this.shapesInputSyncing = false;
+          this.$refs.shapesInput.focus();
+        });
       });
     },
     kmlUrl: function(kmlUrlValue) {
@@ -162,7 +175,7 @@ export default {
       }
       this.roomOptionsRef.child('kml_url').set(kmlUrlValue, error => {
         if (error) {
-          console.log(error);
+          console.error(error);
           this.$emit('firebase_error', "Couldn't modify locations.");
         } else {
           this.setKmlUrl(kmlUrlValue);
@@ -172,21 +185,29 @@ export default {
         }
       });
     },
-    gameMode: function(gameModeValue) {
+    gameMode: function(gameModeValue, oldGameModeValue) {
       if (!this.isChief) {
         return;
       }
+      if (this.gameModeSyncing) {
+        return;
+      }
+      this.gameModeSyncing = true;
       this.roomOptionsRef.child('game_mode').set(gameModeValue, error => {
         if (error) {
-          console.log(error);
+          console.error(error);
           this.$emit('firebase_error', "Couldn't modify game mode.");
-        }
-         else {
+          this.gameMode = oldGameModeValue;
+        } else {
           this.setGameMode(gameModeValue);
           this.triggerGameRegeneration({
             roomPath: roomObjectPath(this.roomId),
           });
         }
+        this.$nextTick(() => {
+          this.gameModeSyncing = false;
+          this.$refs.gameMode.focus();
+        });
       });
     },
     // Once we learn we are a chief, trigger all the computations needed.

@@ -16,8 +16,7 @@ const mutations = {
     state.gameGenerator = gameGenerator;
   },
   startGameGenerator(state, { gameMode, shapeNames, kmlUrl, players }) {
-    state.gameGenerator.startGeneration(
-      gameMode, shapeNames, kmlUrl, players);
+    state.gameGenerator.startGeneration(gameMode, shapeNames, kmlUrl, players);
   },
   cancelCurrentGenerator(state) {
     state.gameGenerator.cancel();
