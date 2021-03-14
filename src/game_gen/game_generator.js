@@ -38,15 +38,25 @@ export class GameGenerator {
 
   startGeneration(gameMode, shapeNames, kmlUrl, players) {
     console.log(
-      'Starting game generation. gameMode: ', gameMode,
-      'shapeNames: ', shapeNames, 'kmlUrl: ', kmlUrl,
-      'players: ', players, 'generator: ', this);
+      'Starting game generation. gameMode: ',
+      gameMode,
+      'shapeNames: ',
+      shapeNames,
+      'kmlUrl: ',
+      kmlUrl,
+      'players: ',
+      players,
+      'generator: ',
+      this,
+    );
     if (kmlUrl != null && kmlUrl != '') {
-      this.work = this.fetchKmlAndGenerateGame(
-        gameMode, kmlUrl, players);
+      this.work = this.fetchKmlAndGenerateGame(gameMode, kmlUrl, players);
     } else {
       this.work = this.fetchShapesAndGenerateGame(
-        gameMode, shapeNames, players);
+        gameMode,
+        shapeNames,
+        players,
+      );
     }
   }
 
@@ -71,7 +81,10 @@ export class GameGenerator {
 
     if (this.cancelled) throw new CancelledError();
     await this.generateGameState(
-      gameMode, players, this.generateValidPosition.bind(this));
+      gameMode,
+      players,
+      this.generateValidPosition.bind(this),
+    );
   }
 
   shuffleArray(array) {
@@ -110,8 +123,10 @@ export class GameGenerator {
 
     if (this.cancelled) throw new CancelledError();
     await this.generateGameState(
-      gameMode, players,
-       this.generateValidPositionFromKmlPoints.bind(this));
+      gameMode,
+      players,
+      this.generateValidPositionFromKmlPoints.bind(this),
+    );
   }
 
   async fetchKml(kmlUrl) {
@@ -176,12 +191,12 @@ export class GameGenerator {
   }
 
   async generateGameState(gameMode, players, posGenFn) {
-    if (gameMode == "classic") {
+    if (gameMode == 'classic') {
       await this.generateClassicGameState(posGenFn);
-    } else if (gameMode == "rendezvous") {
+    } else if (gameMode == 'rendezvous') {
       await this.generateRendezvousGameState(players, posGenFn);
     } else {
-      console.log("Unrecognized gameMode: ", gameMode);
+      console.error('Unrecognized gameMode: ', gameMode);
     }
   }
 
@@ -198,12 +213,11 @@ export class GameGenerator {
   //   * finished: a boolean indicating if the game is finished and a result
   //               screen should be shown to all players.
   async generateRendezvousGameState(players, posGenFn) {
-    console.log("Generating Rendezvous game state for:", players);
+    console.log('Generating Rendezvous game state for:', players);
     if (this.cancelled) throw new CancelledError();
 
     const rendezvous_player_data = {};
-    let i = 0;
-    for (const [player, player_name] of Object.entries(players)) {
+    for (const player of Object.keys(players)) {
       if (this.cancelled) throw new CancelledError();
 
       const position = await posGenFn();
@@ -229,13 +243,16 @@ export class GameGenerator {
       const roomRef = firebase.database().ref(this.roomPath);
       await roomRef.child('rendezvous_data').set(rendezvous_data);
     } catch (error) {
-      console.error('Failed to write player locations to db with error: ', error);
+      console.error(
+        'Failed to write player locations to db with error: ',
+        error,
+      );
       throw new Error('Cannot connect to Firebase.');
     }
   }
 
   async generateClassicGameState(posGenFn) {
-    console.log("Generating Classic game state");
+    console.log('Generating Classic game state');
     if (this.cancelled) throw new CancelledError();
 
     const rounds = {};

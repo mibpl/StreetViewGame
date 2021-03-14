@@ -343,7 +343,7 @@ export default {
       this.triggerGameRegeneration({ roomPath: roomObjectPath(this.roomId) });
     },
     connected_players: function(newVal) {
-      this.setPlayers(this.connected_players);
+      this.setPlayers(newVal);
       if (!this.isChief) {
         this.triggerGameRegeneration({
           roomPath: roomObjectPath(this.roomId),
