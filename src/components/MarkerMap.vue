@@ -9,8 +9,11 @@
       class="white--text"
     >
       Make a guess
-      <p v-if="deadlineTimestamp != null">({{ timeLeft.toFixed(0) }}s)</p>
+      <p v-if="deadlineTimestamp != null">(Time remaining: {{ timeLeft.toFixed(0) }}s)</p>
     </v-btn>
+    <v-system-bar tile color="red lighten" v-if="!guessingEnabled && deadlineTimestamp != null" class="white--text">
+      Time remaining: {{ timeLeft.toFixed(0) }}s
+    </v-system-bar>
     <!-- <button v-on:click="mathdebug()">Do some math!</button> !-->
   </div>
 </template>

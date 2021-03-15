@@ -32,9 +32,15 @@
       v-bind:initialMapPosition="initialMapPosition"
       v-on:position_changed="positionChanged($event)"
       v-bind:jumpButtonsEnabled="true"
+      v-bind:backToStartEnabled="false"
+      v-bind:markerPositions="streetviewMarkerPositions"
     />
     <div id="map-overlay">
-      <MarkerMap @on-click="teleport($event)" v-bind:guessingEnabled="false" />
+      <MarkerMap
+        v-bind:deadlineTimestamp="deadlineTimestamp"
+        v-bind:guessingEnabled="false"
+        @on-click="teleport($event)"
+      />
     </div>
     <PersistentDialog />
     <Dialog />
@@ -123,7 +129,9 @@ export default {
       playerData: {},
       currentChief: '',
       timeLimit: null,
+      deadlineTimestamp: null,
       teleportEnabled: false,
+      deadlineTimerSet: null,
     };
   },
   mounted: function() {
@@ -176,6 +184,31 @@ export default {
     roomId: function() {
       return this.$route.params.roomId;
     },
+    streetviewMarkerPositions: function() {
+      let markerPositions = []
+      if (Object.keys(this.playerData).length == 0) {
+        return [];
+      }
+      let playerCurrentPosition = this.playerData[this.$store.state.auth.uid]
+        .map_position;
+      for (const [ uuid, data ] of Object.entries(this.players)) {
+        let otherPlayerPosition = this.playerData[uuid].map_position;
+        let distanceKm = maps_util.haversine_distance(
+          playerCurrentPosition,
+          otherPlayerPosition,
+        );
+        const username = data.username;
+        let color = maps_util.colorForUuid(uuid).substr(1);
+        const playerPosition = {
+          name: username,
+          distanceKm: distanceKm,
+          position: otherPlayerPosition,
+          color: color,
+        };
+        markerPositions.push(playerPosition);
+      }
+      return markerPositions;
+    },
   },
   methods: {
     refreshPage: function() {
@@ -203,12 +236,33 @@ export default {
           this.initialMapPositionSet = true;
         }
 
+        this.timeLimit = roomState.options?.time_limit || null;
+        this.deadlineTimestamp = roomState.rendezvous_data.deadline || null;
+
+        if (
+          this.deadlineTimestamp == null &&
+          this.timeLimit != null &&
+          this.isChief()
+        ) {
+          this.roomDbRef
+            .child('rendezvous_data')
+            .child('deadline')
+            .set(new Date().getTime() + this.timeLimit * 1000);
+        }
+        if (this.isChief() && this.deadlineTimerSet == null && this.deadlineTimestamp != null) {
+          setTimeout(
+            () => this.finishGame(),
+            this.deadlineTimestamp - new Date().getTime(),
+          );
+          this.deadlineTimerSet = true;
+        }
+
         if (!this.players) {
           this.players = [];
         }
         this.players = roomState.players;
         if (!this.finished && this.isChief()) {
-          this.updateFinished();
+          this.checkForVictory();
         }
       }
       this.roomDbRef.on('value', cb.bind(this));
@@ -241,7 +295,7 @@ export default {
       this.roomDbRef.off();
       this.$router.push(location);
     },
-    updateFinished: function() {
+    checkForVictory: function() {
       if (this.finished) {
         return;
       }
@@ -264,6 +318,9 @@ export default {
         return;
       }
       // Within 10m.
+      this.finishGame();
+    },
+    finishGame: function() {
       this.roomDbRef
         .child('rendezvous_data')
         .child('finished')

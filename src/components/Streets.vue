@@ -1,6 +1,7 @@
 <template>
   <div id="street-view-container">
     <v-btn
+      v-if="backToStartEnabled"
       id="back-to-position-button"
       class="custom-control-button"
       fab
@@ -104,6 +105,7 @@
 
 <script>
 import maps from '@/maps_util.js';
+import sanitizeHtml from 'sanitize-html';
 import { mapActions, mapMutations } from 'vuex';
 
 /*global google*/
@@ -116,14 +118,23 @@ export default {
       type: Object,
       required: true,
     },
+    backToStartEnabled: {
+      type: Boolean,
+      required: true,
+    },
     jumpButtonsEnabled: {
       type: Boolean,
       required: true,
+    },
+    markerPositions: {
+      type: Array,
+      required: false,
     },
   },
   data: function() {
     return {
       mapPosition: { lat: 37.75598, lng: -122.41231 },
+      currentMarkers: [],
     };
   },
   name: 'Streets',
@@ -171,6 +182,12 @@ export default {
         });
       }
     },
+    wipeCurrentMarkers: function() {
+      for (const marker of this.currentMarkers) {
+        marker.setMap(null);
+      };
+      this.currentMarkers = [];
+    },
     ...mapActions('toast', ['showToast']),
   },
   mounted: function() {
@@ -210,6 +227,26 @@ export default {
         'emitting position_changed',
       );
       this.$emit('position_changed', newValue);
+    },
+    markerPositions: function(newMarkerPositions) {
+      this.wipeCurrentMarkers();
+      for (const marker of newMarkerPositions) {
+        const sanitizedName = sanitizeHtml(marker.name, {
+          allowedTags: [],
+          allowedAttributes: {},
+          disallowedTagsMode: 'recursiveEscape',
+        });
+        const marker_obj = new google.maps.Marker({
+          position: marker.position,
+          map: this.panorama,
+          icon:
+            `http://chart.apis.google.com/chart?chst=d_map_spin&chld=2.1|0|` +
+            `${marker.color}|13|b|${sanitizedName}|` +
+            `${marker.distanceKm.toFixed(3)}km`,
+          title: sanitizedName,
+        });
+        this.currentMarkers.push(marker_obj);
+      }
     },
   },
 };

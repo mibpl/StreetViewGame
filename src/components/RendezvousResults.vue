@@ -14,7 +14,6 @@
 <script>
 /*global google*/
 import sanitizeHtml from 'sanitize-html';
-import colors from 'vuetify/lib/util/colors';
 import maps_util from '@/maps_util';
 
 export default {
@@ -52,13 +51,6 @@ export default {
           disableDefaultUI: true,
         },
       );
-    },
-    randomElement: function(arr) {
-      return arr[Math.floor(Math.random() * arr.length)];
-    },
-    randomColor: function() {
-      let color_group = this.randomElement(Object.values(colors));
-      return color_group.base;
     },
     refreshMarkers: function() {
       this.wipeMarkers();
@@ -105,7 +97,7 @@ export default {
           content: `${sanitizedUsername}: ${total_distance.toFixed(2)} km`,
         });
         info.open(this.map, startMarker);
-        let color = this.randomColor();
+        let color = maps_util.colorForUuid(key);
         const line = new google.maps.Polyline({
           path: deduped_history,
           map: this.map,
@@ -117,8 +109,8 @@ export default {
       const endMarker = new google.maps.Marker({
         position: final_center_point,
         map: this.map,
-        title: `Rendevous point`,
-        label: `Rendevous point`,
+        title: `Rendezvous point`,
+        label: `Rendezvous point`,
       });
       this.markers.push(endMarker);
     },
