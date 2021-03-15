@@ -57,6 +57,7 @@
     <Streets
       v-bind:initialMapPosition="mapPosition"
       v-bind:jumpButtonsEnabled="false"
+      v-bind:backToStartEnabled="true"
     />
     <div id="map-overlay">
       <MarkerMap
