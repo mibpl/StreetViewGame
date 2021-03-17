@@ -1,5 +1,43 @@
 <template>
   <div id="game-view-container">
+    <v-dialog max-width="60vw" v-model="instructionsVisible">
+      <v-card>
+        <v-card-title class="headline">
+          Instructions
+        </v-card-title>
+        <v-card-text>
+          Welcome to Rendezvous!<br />
+          <h2>Objective</h2>
+          Every player starts at a different location. The objective is for the
+          players to meet up at a single location of your choosing (this means
+          you must all be within 10m of each other).<br />
+          <h2>Traveling</h2>
+          You can move by using the regular Streetview movement. In addition,
+          you can use the [number]KM buttons on the right of the screen to
+          travel for (roughly) [number] kilometers in the direction you're
+          facing (+- 0.1 radians, or 5.7 degrees). There are many caveats
+          though: sometimes it won't be possible to find a streetview location
+          in the direction you're facing, or you'll only be able to travel part
+          of the requested distance, or you'll end up a bit off of where you
+          were aiming for.
+          <h2>Minimap</h2>
+          You can use the minimap in the lower left corner as a tool to help you
+          figure out where you are. You can set a marker on it for convenience.
+          In contrast to the Classic game it has no other gameplay purpose.
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            id="confirm_btn"
+            color="primary"
+            @click="instructionsVisible = false"
+          >
+            Ok
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     <v-overlay :value="finished" id="win-overlay">
       <v-card light height="100%">
         <v-card-title>
@@ -23,11 +61,21 @@
         </v-card-actions>
       </v-card>
     </v-overlay>
-    <PlayerList
-      @on-kick-player="kickPlayer($event)"
-      v-bind:playerGuessStatus="players"
-      v-bind:isChief="isChief()"
-    />
+    <v-row class="d-flex">
+      <PlayerList
+        @on-kick-player="kickPlayer($event)"
+        v-bind:playerGuessStatus="players"
+        v-bind:isChief="isChief()"
+      />
+      <v-btn
+        class="white--text"
+        small
+        color="accent"
+        v-on:click="instructionsVisible = true"
+      >
+        How to play
+      </v-btn>
+    </v-row>
     <Streets
       v-bind:initialMapPosition="initialMapPosition"
       v-on:position_changed="positionChanged($event)"
@@ -132,6 +180,7 @@ export default {
       deadlineTimestamp: null,
       teleportEnabled: false,
       deadlineTimerSet: null,
+      instructionsVisible: false,
     };
   },
   mounted: function() {
@@ -185,13 +234,13 @@ export default {
       return this.$route.params.roomId;
     },
     streetviewMarkerPositions: function() {
-      let markerPositions = []
+      let markerPositions = [];
       if (Object.keys(this.playerData).length == 0) {
         return [];
       }
       let playerCurrentPosition = this.playerData[this.$store.state.auth.uid]
         .map_position;
-      for (const [ uuid, data ] of Object.entries(this.players)) {
+      for (const [uuid, data] of Object.entries(this.players)) {
         let otherPlayerPosition = this.playerData[uuid].map_position;
         let distanceKm = maps_util.haversine_distance(
           playerCurrentPosition,
@@ -249,7 +298,11 @@ export default {
             .child('deadline')
             .set(new Date().getTime() + this.timeLimit * 1000);
         }
-        if (this.isChief() && this.deadlineTimerSet == null && this.deadlineTimestamp != null) {
+        if (
+          this.isChief() &&
+          this.deadlineTimerSet == null &&
+          this.deadlineTimestamp != null
+        ) {
           setTimeout(
             () => this.finishGame(),
             this.deadlineTimestamp - new Date().getTime(),

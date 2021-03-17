@@ -37,6 +37,26 @@
       </v-row>
       <v-row>
         <v-col>
+          <div
+            v-if="
+              gameMode == 'rendezvous' &&
+                selectedShapeNames.length == 0 &&
+                kmlUrl == ''
+            "
+          >
+            <span class="red--text">Warning:</span> for rendezvous to be
+            winnable the starting locations of all players must be connected
+            over streetview roads, but the location generation algorithm doesn't
+            take this into account. (E.g. if one player is in the Americas and
+            another in Asia, there is no way to win.) Select a location or
+            provide a KML URL below to decrease the chance of being in an
+            unwinnable game. You can use
+            <a
+              href="https://en.wikipedia.org/wiki/Coverage_of_Google_Street_View"
+              >wikipedia</a
+            >
+            as a guide to good starting locations.
+          </div>
           <v-autocomplete
             ref="shapesInput"
             v-model="selectedShapeNames"
@@ -104,7 +124,7 @@ export default {
       timeLimitSyncing: false,
       shapesInputSyncing: false,
       gameModeSyncing: false,
-      showGameModePicker: false,
+      showGameModePicker: true,
     };
   },
   computed: {
