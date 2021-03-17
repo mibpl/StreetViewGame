@@ -155,11 +155,11 @@ export default {
         this.panorama.setPosition(new_position.destination);
         if (distance_km * 0.9 < new_position.distance_km && new_position.distance_km < distance_km * 1.1) {
           this.showToast({
-            text: `Jumped ${new_position.distance_km.toFixed(2)}km`,
+            text: `Jumped ${new_position.distance_km.toFixed(2)} km`,
           });
         } else {
           this.showToast({
-            text: `Jump was imprecise: ${new_position.distance_km.toFixed(2)}km`,
+            text: `Jump was imprecise: ${new_position.distance_km.toFixed(2)} km`,
             color: "orange",
           });
         }
