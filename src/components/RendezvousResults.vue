@@ -15,7 +15,7 @@
 /*global google*/
 import sanitizeHtml from 'sanitize-html';
 import colors from 'vuetify/lib/util/colors';
-import maps_util from '../maps_util';
+import maps_util from '@/maps_util';
 
 export default {
   props: {
@@ -29,7 +29,9 @@ export default {
     },
   },
   data: function() {
-    return {};
+    return {
+      markers: [],
+    };
   },
   name: 'RendezvousResults',
   methods: {
@@ -50,8 +52,6 @@ export default {
           disableDefaultUI: true,
         },
       );
-
-      this.markers = [];
     },
     randomElement: function(arr) {
       return arr[Math.floor(Math.random() * arr.length)];
@@ -65,7 +65,7 @@ export default {
       this.mountMap();
 
       if (this.players == null || this.player_data == null) {
-        console.log('Players or player_data is missing');
+        console.error('Players or player_data is missing');
         return;
       }
       const final_positions = [];

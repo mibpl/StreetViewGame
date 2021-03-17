@@ -96,7 +96,7 @@ import PersistentDialog from '@/components/PersistentDialog';
 import RendezvousResults from '@/components/RendezvousResults';
 import { roomObjectPath, signInGuard, roomGuard } from '@/firebase_utils.js';
 import { mapMutations } from 'vuex';
-import maps_util from '../maps_util';
+import maps_util from '@/maps_util';
 
 var roomState = {};
 
@@ -150,7 +150,7 @@ export default {
             text:
               "Room you are trying to access doesn't exist. " +
               'Use correct link or create a new room.',
-            confirmAction: function() {
+            confirmAction: () => {
               this.cleanUpAndChangeView({ name: 'main' });
             },
           });
@@ -303,10 +303,17 @@ export default {
     },
     kickPlayer(event) {
       const player_uuid = event.player_uuid;
-      this.roomDbRef
-        .child('players')
-        .child(player_uuid)
-        .remove();
+      if (Object.keys(this.players).length <= 2) {
+        this.showDialog({
+          title: "Can't kick two or fewer players left",
+          text: 'Create a new game instead',
+        });
+        return;
+      }
+      let updateDict = {};
+      updateDict[`players/${player_uuid}`] = null;
+      updateDict[`rendezvous_data/player_data/${player_uuid}`] = null;
+      this.roomDbRef.update(updateDict);
     },
     ...mapMutations('persistentDialog', [
       'showPersistentDialog',

@@ -56,13 +56,13 @@
     />
     <Streets
       v-bind:initialMapPosition="mapPosition"
-      v-bind:jumpButtonsEnabled=false
+      v-bind:jumpButtonsEnabled="false"
     />
     <div id="map-overlay">
       <MarkerMap
         @on-guess="guess($event)"
         v-bind:deadlineTimestamp="deadlineTimestamp"
-        v-bind:guessingEnabled=true
+        v-bind:guessingEnabled="true"
       />
     </div>
     <PersistentDialog />

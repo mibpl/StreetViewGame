@@ -18,7 +18,8 @@
         elevation="0"
         color="secondary"
         @click="jump(500)"
-      >500km</v-btn>
+        >500km</v-btn
+      >
       <v-btn
         id="jump-button-50"
         class="jump-button"
@@ -26,7 +27,8 @@
         elevation="0"
         color="secondary"
         @click="jump(50)"
-      >50km</v-btn>
+        >50km</v-btn
+      >
       <v-btn
         id="jump-button-10"
         class="jump-button"
@@ -34,7 +36,8 @@
         elevation="0"
         color="secondary"
         @click="jump(10)"
-      >10km</v-btn>
+        >10km</v-btn
+      >
       <v-btn
         id="jump-button-1"
         class="jump-button"
@@ -42,7 +45,8 @@
         elevation="0"
         color="secondary"
         @click="jump(1)"
-      >1km</v-btn>
+        >1km</v-btn
+      >
     </v-container>
     <div id="street-view-anchor" />
   </div>
@@ -134,12 +138,19 @@ export default {
         bearing_deg = bearing_deg - 360;
       }
       const new_position = await maps.jumpByDistanceAndBearing(
-        {lat: position.lat(), lng: position.lng()}, distance_km, bearing_deg);
+        { lat: position.lat(), lng: position.lng() },
+        distance_km,
+        bearing_deg,
+      );
       if (new_position != null) {
         console.log(
-          "Closest panorama is at lat: ", new_position.destination.lat,
-          "; lng: ", new_position.destination.lng,
-          "distance: ", new_position.distance_km);
+          'Closest panorama is at lat: ',
+          new_position.destination.lat,
+          '; lng: ',
+          new_position.destination.lng,
+          'distance: ',
+          new_position.distance_km,
+        );
         this.panorama.setPosition(new_position.destination);
       } else {
         console.log("Can't find panorama in this direction.");
@@ -162,22 +173,26 @@ export default {
         panControl: true,
       },
     );
-    this.panorama.addListener("position_changed", () => {
+    this.panorama.addListener('position_changed', () => {
       const pos = this.panorama.getPosition();
       this.mapPosition = pos.toJSON();
-      console.log("Position changed in streetview:", this.mapPosition);
+      console.log('Position changed in streetview:', this.mapPosition);
     });
   },
   watch: {
-    initialMapPosition: function(newValue, oldValue) {
+    initialMapPosition: function(newValue) {
       console.log(
-        "initialMapPosition changed, forcing streetview position to: ",
-        newValue);
+        'initialMapPosition changed, forcing streetview position to: ',
+        newValue,
+      );
       this.panorama.setPosition(newValue);
     },
-    mapPosition: function(newValue, oldValue) {
+    mapPosition: function(newValue) {
       console.log(
-        "mapPosition changed to", newValue, "emitting position_changed");
+        'mapPosition changed to',
+        newValue,
+        'emitting position_changed',
+      );
       this.$emit('position_changed', newValue);
     },
   },
