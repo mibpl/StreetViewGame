@@ -303,7 +303,7 @@ export class GameGenerator {
   }
 
   async generateValidPosition() {
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 60; i++) {
       if (this.cancelled) throw new CancelledError();
       let point = null;
       if (this.shapes.length > 0) {
