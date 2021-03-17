@@ -269,8 +269,12 @@ export default {
     },
     ...mapActions('gameGen', ['triggerGameRegeneration']),
     ...mapMutations('gameGen', [
-      'setAvailableShapes', 'setSelectedShapes', 'setKmlUrl',
-      'setGameMode', 'setPlayers']),
+      'setAvailableShapes',
+      'setSelectedShapes',
+      'setKmlUrl',
+      'setGameMode',
+      'setPlayers',
+    ]),
   },
   mounted: function() {
     this.watchOptionsChanges();

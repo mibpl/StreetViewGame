@@ -88,13 +88,6 @@ import Dialog from '@/components/Dialog';
 import PersistentDialog from '@/components/PersistentDialog';
 import { roomObjectPath, signInGuard, roomGuard } from '@/firebase_utils.js';
 
-export class GameCreationError extends Error {
-  constructor() {
-    super('Failed to create the game.');
-    this.name = 'GameCreationError';
-  }
-}
-
 export default {
   name: 'Lobby',
   data: function() {
@@ -218,7 +211,10 @@ export default {
           }
           if (startedSnapshot.val() === true) {
             this.gameModeDbRef.once('value').then(gameMode => {
-              if (gameMode.val() != 'classic' && gameMode.val() != 'rendezvous') {
+              if (
+                gameMode.val() != 'classic' &&
+                gameMode.val() != 'rendezvous'
+              ) {
                 this.showDialog({
                   title: `Game mode ${gameMode.val()} unknown`,
                   text:
@@ -240,8 +236,8 @@ export default {
     },
     async ensureGameGeneratedAndStart() {
       try {
-        await this.waitToFinishGeneration()
-      } catch(error) {
+        await this.waitToFinishGeneration();
+      } catch (error) {
         this.startingGame = false;
         this.forceRegenerationOnStartGame = true;
         this.showDialog({
@@ -255,21 +251,20 @@ export default {
         return;
       }
       let game_mode = await this.gameModeDbRef.once('value');
-      if (game_mode.val() == "rendezvous") {
+      if (game_mode.val() == 'rendezvous') {
         if (Object.keys(this.connected_players).length < 2) {
           this.startingGame = false;
           this.forceRegenerationOnStartGame = true;
           this.showDialog({
             title: 'Rendezvous needs at least 2 players',
-            text:
-              "Currently no single-player mode is implemented. Sorry :(",
+            text: 'Currently no single-player mode is implemented. Sorry :(',
           });
           return;
         }
       }
       try {
         this.startedDbRef.set(true);
-      } catch(error) {
+      } catch (error) {
         this.startingGame = false;
         this.forceRegenerationOnStartGame = true;
         console.log(error);

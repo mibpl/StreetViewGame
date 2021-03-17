@@ -145,7 +145,7 @@ export default {
         players: {},
         current_round: 0,
         options: {
-          game_mode: "classic",
+          game_mode: 'classic',
         },
       };
       roomObject.players[uid] = {

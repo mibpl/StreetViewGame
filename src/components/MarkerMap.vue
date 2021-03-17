@@ -1,8 +1,13 @@
 <template>
   <div id="marker-map-container">
     <div id="map-anchor" />
-    <v-btn tile color="accent" v-if="guessingEnabled"
-           v-on:click="guess()" class="white--text">
+    <v-btn
+      tile
+      color="accent"
+      v-if="guessingEnabled"
+      v-on:click="guess()"
+      class="white--text"
+    >
       Make a guess
       <p v-if="deadlineTimestamp != null">({{ timeLeft.toFixed(0) }}s)</p>
     </v-btn>
