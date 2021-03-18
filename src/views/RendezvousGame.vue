@@ -19,7 +19,10 @@
           though: sometimes it won't be possible to find a streetview location
           in the direction you're facing, or you'll only be able to travel part
           of the requested distance, or you'll end up a bit off of where you
-          were aiming for.
+          were aiming for.<br />
+          If you make a mistake, or Streetview takes you somewhere you didn't
+          expect, you can fix this using the undo button (located underneath the
+          KM buttons). Note that it only allows you to undo a single movement.
           <h2>Minimap</h2>
           You can use the minimap in the lower left corner as a tool to help you
           figure out where you are. You can set a marker on it for convenience.
@@ -61,21 +64,27 @@
         </v-card-actions>
       </v-card>
     </v-overlay>
-    <v-row class="d-flex">
-      <PlayerList
-        @on-kick-player="kickPlayer($event)"
-        v-bind:playerGuessStatus="players"
-        v-bind:isChief="isChief()"
-      />
-      <v-btn
-        class="white--text"
-        small
-        color="accent"
-        v-on:click="instructionsVisible = true"
-      >
-        How to play
-      </v-btn>
-    </v-row>
+    <v-container class="pa-0 mx-3 my-0">
+      <v-row class="pa-0 ma-0">
+        <v-col class="flex-grow-0 flex-shrink-1 pa-0 ml-0 mr-3">
+          <v-btn
+            class="white--text"
+            small
+            color="accent"
+            v-on:click="instructionsVisible = true"
+          >
+            How to play
+          </v-btn>
+        </v-col>
+        <v-col class="flex-grow-1 flex-shrink-0 pa-0 ma-0">
+          <PlayerList
+            @on-kick-player="kickPlayer($event)"
+            v-bind:playerGuessStatus="players"
+            v-bind:isChief="isChief()"
+          />
+        </v-col>
+      </v-row>
+    </v-container>
     <Streets
       v-bind:initialMapPosition="initialMapPosition"
       v-on:position_changed="positionChanged($event)"
