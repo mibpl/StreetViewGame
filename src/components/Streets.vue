@@ -48,6 +48,16 @@
         @click="jump(1)"
         >1km</v-btn
       >
+      <v-btn
+        id="undo-button"
+        class="jump-button"
+        fab
+        elevation="0"
+        color="secondary"
+        @click="undo()"
+      >
+        <v-icon large>mdi-undo-variant</v-icon>
+      </v-btn>
     </div>
     <div id="street-view-anchor" />
   </div>
@@ -80,6 +90,10 @@
 #back-to-position-button {
   width: 50px;
   height: 50px;
+}
+
+#undo-button {
+  bottom: 210px;
 }
 
 #jump-button-1 {
@@ -134,6 +148,7 @@ export default {
   data: function() {
     return {
       mapPosition: { lat: 37.75598, lng: -122.41231 },
+      undoMapPosition: null,
       currentMarkers: [],
     };
   },
@@ -193,6 +208,9 @@ export default {
       }
       this.currentMarkers = [];
     },
+    undo: function() {
+      this.panorama.setPosition(this.undoMapPosition);
+    },
     ...mapActions('toast', ['showToast']),
   },
   mounted: function() {
@@ -225,7 +243,12 @@ export default {
       );
       this.panorama.setPosition(newValue);
     },
-    mapPosition: function(newValue) {
+    mapPosition: function(newValue, oldValue) {
+      console.log("pos:", newValue, oldValue);
+      if (newValue.lat == oldValue.lat && newValue.lng == oldValue.lng) {
+        return;
+      }
+      this.undoMapPosition = oldValue;
       console.log(
         'mapPosition changed to',
         newValue,
