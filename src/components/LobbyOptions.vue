@@ -234,6 +234,7 @@ export default {
     isChief: function(newVal) {
       if (!newVal) {
         console.error('We lost "chief" status! This should never happen!');
+        return;
       }
       // Stop watching for option changes.
       this.roomOptionsRef.off();

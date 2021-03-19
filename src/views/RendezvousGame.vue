@@ -50,6 +50,7 @@
           <RendezvousResults
             v-bind:players="players"
             v-bind:player_data="playerData"
+            v-bind:victory="victory"
           />
         </v-container>
         <v-card-actions class="card-bottom">
@@ -160,7 +161,7 @@ import PersistentDialog from '@/components/PersistentDialog';
 import RendezvousResults from '@/components/RendezvousResults';
 import Toast from '@/components/Toast';
 import { roomObjectPath, signInGuard, roomGuard } from '@/firebase_utils.js';
-import { mapMutations } from 'vuex';
+import { mapMutations, mapActions } from 'vuex';
 import maps_util from '@/maps_util';
 
 var roomState = {};
@@ -181,6 +182,7 @@ export default {
       initialMapPosition: { lat: 37.75598, lng: -122.41231 },
       initialMapPositionSet: false,
       finished: false,
+      victory: false,
       roomState: {},
       players: {},
       playerData: {},
@@ -208,7 +210,7 @@ export default {
         return roomGuard(this.roomId, uid);
       })
       .then(() => {
-        this.hidePersistentDialog();
+        this.hidePersistentDialogAction();
         this.refreshPage();
       })
       .catch(error_room => {
@@ -282,6 +284,7 @@ export default {
 
         this.playerData = roomState.rendezvous_data.player_data;
         this.finished = roomState.rendezvous_data.finished;
+        this.victory = roomState.rendezvous_data.victory;
         if (!this.initialMapPositionSet) {
           // The first time after loading the game we want to update the streetview position.
           // Afterwards the database is always secondary to streetview.
@@ -313,7 +316,7 @@ export default {
           this.deadlineTimestamp != null
         ) {
           setTimeout(
-            () => this.finishGame(),
+            () => this.finishGame(false),
             this.deadlineTimestamp - new Date().getTime(),
           );
           this.deadlineTimerSet = true;
@@ -380,18 +383,20 @@ export default {
         return;
       }
       // Within 10m.
-      this.finishGame();
+      this.finishGame(true);
     },
-    finishGame: function() {
+    finishGame: function(victory) {
+      if (this.finished) {
+        return;
+      }
       this.roomDbRef
         .child('rendezvous_data')
-        .child('finished')
-        .set(true, error => {
+        .update({ finished: true, victory: victory }, error => {
           if (error) {
             console.log(error);
             this.$emit(
               'firebase_error',
-              "Couldn't modify 'finished' in database.",
+              "Couldn't modify 'finished' and 'victory' in database.",
             );
           }
         });
@@ -439,7 +444,9 @@ export default {
     },
     ...mapMutations('persistentDialog', [
       'showPersistentDialog',
-      'hidePersistentDialog',
+    ]),
+    ...mapActions('persistentDialog', [
+      'hidePersistentDialogAction',
     ]),
     ...mapMutations('dialog', ['showDialog']),
   },
