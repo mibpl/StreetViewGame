@@ -376,7 +376,6 @@ export default {
             player_1.map_position,
             player_2.map_position,
           );
-          console.log('Distance:', player_1, player_2, distance_km);
           max_distance_km = Math.max(max_distance_km, distance_km);
         }
       }

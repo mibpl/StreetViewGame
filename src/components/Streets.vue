@@ -170,14 +170,6 @@ export default {
         bearing_deg,
       );
       if (new_position != null) {
-        console.log(
-          'Closest panorama is at lat: ',
-          new_position.destination.lat,
-          '; lng: ',
-          new_position.destination.lng,
-          'distance: ',
-          new_position.distance_km,
-        );
         this.panorama.setPosition(new_position.destination);
         if (
           distance_km * 0.9 < new_position.distance_km &&
@@ -195,7 +187,6 @@ export default {
           });
         }
       } else {
-        console.log("Can't find panorama in this direction.");
         this.showToast({
           text: 'Failed to find panorama in this direction',
           color: 'red',
@@ -232,7 +223,6 @@ export default {
     this.panorama.addListener('position_changed', () => {
       const pos = this.panorama.getPosition();
       this.mapPosition = pos.toJSON();
-      console.log('Position changed in streetview:', this.mapPosition);
     });
   },
   watch: {
@@ -244,7 +234,6 @@ export default {
       this.panorama.setPosition(newValue);
     },
     mapPosition: function(newValue, oldValue) {
-      console.log('pos:', newValue, oldValue);
       if (newValue.lat == oldValue.lat && newValue.lng == oldValue.lng) {
         return;
       }

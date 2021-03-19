@@ -81,12 +81,6 @@ class GoogleMapsWrapper {
       // If that fails we attempt to back off each time by 1/num_attempts of distance_km.
       // The radius gets progressively narrower to maintain the same distance-to-search radius proportion.
       const radius_m = distance_km * 0.1 * fraction * 1000;
-      console.log(
-        'jumpByDistanceAndBearing, searching at distance: ',
-        distance_km * fraction,
-        ' with radius: ',
-        radius_m,
-      );
       panorama = await this.getClosestPanorama(
         { lat: jump_point_turf[1], lng: jump_point_turf[0] },
         radius_m,
@@ -96,7 +90,6 @@ class GoogleMapsWrapper {
       }
     }
     if (panorama != null) {
-      console.log('jumpByDistanceAndBearing found: ', panorama);
       return {
         destination: { lat: panorama.lat, lng: panorama.lng },
         distance_km: this.haversine_distance(point, panorama),
