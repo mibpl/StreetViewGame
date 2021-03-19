@@ -26,6 +26,10 @@ export default {
       type: Object,
       required: true,
     },
+    victory: {
+      type: Boolean,
+      required: true,
+    },
   },
   data: function() {
     return {
@@ -105,14 +109,16 @@ export default {
         });
         this.markers.push(line);
       }
-      const final_center_point = maps_util.centerPoint(final_positions);
-      const endMarker = new google.maps.Marker({
-        position: final_center_point,
-        map: this.map,
-        title: `Rendezvous point`,
-        label: `Rendezvous point`,
-      });
-      this.markers.push(endMarker);
+      if (this.victory) {
+        const final_center_point = maps_util.centerPoint(final_positions);
+        const endMarker = new google.maps.Marker({
+          position: final_center_point,
+          map: this.map,
+          title: `Rendezvous point`,
+          label: `Rendezvous point`,
+        });
+        this.markers.push(endMarker);
+      }
     },
   },
   mounted: function() {
