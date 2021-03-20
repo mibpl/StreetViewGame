@@ -1,10 +1,26 @@
 <template>
   <div id="marker-map-container">
     <div id="map-anchor" />
-    <v-btn tile color="accent" v-on:click="guess()" class="white--text">
+    <v-btn
+      tile
+      color="accent"
+      v-if="guessingEnabled"
+      v-on:click="guess()"
+      class="white--text"
+    >
       Make a guess
-      <p v-if="deadlineTimestamp != null">({{ timeLeft.toFixed(0) }}s)</p>
+      <p v-if="deadlineTimestamp != null">
+        (Time remaining: {{ timeLeft.toFixed(0) }}s)
+      </p>
     </v-btn>
+    <v-system-bar
+      tile
+      color="red lighten"
+      v-if="!guessingEnabled && deadlineTimestamp != null"
+      class="white--text"
+    >
+      Time remaining: {{ timeLeft.toFixed(0) }}s
+    </v-system-bar>
     <!-- <button v-on:click="mathdebug()">Do some math!</button> !-->
   </div>
 </template>
@@ -36,6 +52,10 @@ export default {
       type: Number,
       required: false,
     },
+    guessingEnabled: {
+      type: Boolean,
+      required: false,
+    },
   },
   data: function() {
     return {
@@ -65,6 +85,7 @@ export default {
         map: this.map,
         title: 'My guess',
       });
+      this.$emit('on-click', this.marker.position.toJSON());
     });
     this.timerCallback = setInterval(() => {
       if (this.deadlineTimestamp != null) {

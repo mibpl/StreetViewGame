@@ -54,11 +54,16 @@
       v-bind:playerGuessStatus="players"
       v-bind:isChief="isChief()"
     />
-    <Streets v-bind:mapPosition="mapPosition" />
+    <Streets
+      v-bind:initialMapPosition="mapPosition"
+      v-bind:jumpButtonsEnabled="false"
+      v-bind:backToStartEnabled="true"
+    />
     <div id="map-overlay">
       <MarkerMap
         @on-guess="guess($event)"
         v-bind:deadlineTimestamp="deadlineTimestamp"
+        v-bind:guessingEnabled="true"
       />
     </div>
     <PersistentDialog />
@@ -111,7 +116,6 @@
 
 <script>
 import firebase from 'firebase/app';
-import 'firebase/database';
 
 // This is the main view for the actual game.
 import Streets from '@/components/Streets.vue';
@@ -128,7 +132,7 @@ import { mapMutations } from 'vuex';
 var roomState = {};
 
 export default {
-  name: 'Game',
+  name: 'ClassicGame',
   components: {
     Dialog,
     Streets,

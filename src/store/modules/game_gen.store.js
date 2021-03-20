@@ -15,8 +15,8 @@ const mutations = {
   setNewGameGenerator(state, { gameGenerator }) {
     state.gameGenerator = gameGenerator;
   },
-  startGameGenerator(state, { shapeNames, kmlUrl }) {
-    state.gameGenerator.startGeneration(shapeNames, kmlUrl);
+  startGameGenerator(state, { gameMode, shapeNames, kmlUrl, players }) {
+    state.gameGenerator.startGeneration(gameMode, shapeNames, kmlUrl, players);
   },
   cancelCurrentGenerator(state) {
     state.gameGenerator.cancel();
@@ -41,6 +41,12 @@ const mutations = {
   },
   setKmlUrl(state, kmlUrl) {
     state.kmlUrl = kmlUrl;
+  },
+  setGameMode(state, gameMode) {
+    state.gameMode = gameMode;
+  },
+  setPlayers(state, players) {
+    state.players = players;
   },
 };
 
@@ -87,8 +93,10 @@ const actions = {
       }
     }
     commit('startGameGenerator', {
+      gameMode: state.gameMode,
       shapeNames: state.currentlySelectedShapes,
       kmlUrl: state.kmlUrl,
+      players: state.players,
     });
   },
   async waitToFinishGeneration({ state, commit }) {

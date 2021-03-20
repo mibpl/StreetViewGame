@@ -15,7 +15,11 @@ const mutations = {
   },
 };
 
-const actions = {};
+const actions = {
+  hidePersistentDialogAction({ commit }) {
+    commit('hidePersistentDialog');
+  },
+};
 
 export default {
   namespaced: true,

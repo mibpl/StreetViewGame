@@ -1,3 +1,4 @@
+import colors from 'vuetify/lib/util/colors';
 import destination from '@turf/destination';
 
 const google = window.google;
@@ -160,6 +161,11 @@ class GoogleMapsWrapper {
       scores[player] = r;
     }
     return scores;
+  }
+
+  colorForUuid(user_uuid) {
+    const colorInd = user_uuid.charCodeAt(0) % Object.values(colors).length;
+    return Object.values(colors)[colorInd].base;
   }
 }
 

@@ -1,6 +1,7 @@
 <template>
   <div id="street-view-container">
     <v-btn
+      v-if="backToStartEnabled"
       id="back-to-position-button"
       class="custom-control-button"
       fab
@@ -10,6 +11,54 @@
     >
       <v-icon large>mdi-anchor</v-icon>
     </v-btn>
+    <div v-if="jumpButtonsEnabled">
+      <v-btn
+        id="jump-button-500"
+        class="jump-button"
+        fab
+        elevation="0"
+        color="secondary"
+        @click="jump(500)"
+        >500km</v-btn
+      >
+      <v-btn
+        id="jump-button-50"
+        class="jump-button"
+        fab
+        elevation="0"
+        color="secondary"
+        @click="jump(50)"
+        >50km</v-btn
+      >
+      <v-btn
+        id="jump-button-10"
+        class="jump-button"
+        fab
+        elevation="0"
+        color="secondary"
+        @click="jump(10)"
+        >10km</v-btn
+      >
+      <v-btn
+        id="jump-button-1"
+        class="jump-button"
+        fab
+        elevation="0"
+        color="secondary"
+        @click="jump(1)"
+        >1km</v-btn
+      >
+      <v-btn
+        id="undo-button"
+        class="jump-button"
+        fab
+        elevation="0"
+        color="secondary"
+        @click="undo()"
+      >
+        <v-icon large>mdi-undo-variant</v-icon>
+      </v-btn>
+    </div>
     <div id="street-view-anchor" />
   </div>
 </template>
@@ -20,6 +69,14 @@
   z-index: 2;
   right: 10px;
   bottom: 210px;
+}
+
+.jump-button {
+  position: absolute;
+  z-index: 2;
+  right: 10px;
+  width: 50px;
+  height: 50px;
 }
 
 #street-view-container {
@@ -35,38 +92,132 @@
   height: 50px;
 }
 
+#undo-button {
+  bottom: 210px;
+}
+
+#jump-button-1 {
+  bottom: 310px;
+}
+
+#jump-button-10 {
+  bottom: 410px;
+}
+
+#jump-button-50 {
+  bottom: 510px;
+}
+
+#jump-button-500 {
+  bottom: 610px;
+}
+
 #street-view-anchor {
   flex-grow: 1;
 }
 </style>
 
 <script>
+import maps from '@/maps_util.js';
+import sanitizeHtml from 'sanitize-html';
+import { mapActions } from 'vuex';
+
 /*global google*/
 
 const DEFAULT_POV = { heading: -110, pitch: 0 };
 
 export default {
   props: {
-    mapPosition: {
+    initialMapPosition: {
       type: Object,
       required: true,
     },
+    backToStartEnabled: {
+      type: Boolean,
+      required: true,
+    },
+    jumpButtonsEnabled: {
+      type: Boolean,
+      required: true,
+    },
+    markerPositions: {
+      type: Array,
+      required: false,
+    },
   },
   data: function() {
-    return {};
+    return {
+      mapPosition: { lat: 37.75598, lng: -122.41231 },
+      undoMapPosition: null,
+      currentMarkers: [],
+    };
   },
   name: 'Streets',
   methods: {
     goBackToStart: function() {
-      this.panorama.setPosition(this.mapPosition);
+      this.panorama.setPosition(this.initialMapPosition);
       this.panorama.setPov(DEFAULT_POV);
     },
+    jump: async function(distance_km) {
+      const position = this.panorama.getPosition();
+      let bearing_deg = this.panorama.getPov().heading;
+      if (bearing_deg > 180) {
+        bearing_deg = bearing_deg - 360;
+      }
+      const new_position = await maps.jumpByDistanceAndBearing(
+        { lat: position.lat(), lng: position.lng() },
+        distance_km,
+        bearing_deg,
+      );
+      if (new_position != null) {
+        console.log(
+          'Closest panorama is at lat: ',
+          new_position.destination.lat,
+          '; lng: ',
+          new_position.destination.lng,
+          'distance: ',
+          new_position.distance_km,
+        );
+        this.panorama.setPosition(new_position.destination);
+        if (
+          distance_km * 0.9 < new_position.distance_km &&
+          new_position.distance_km < distance_km * 1.1
+        ) {
+          this.showToast({
+            text: `Jumped ${new_position.distance_km.toFixed(2)} km`,
+          });
+        } else {
+          this.showToast({
+            text: `Jump was imprecise: ${new_position.distance_km.toFixed(
+              2,
+            )} km`,
+            color: 'orange',
+          });
+        }
+      } else {
+        console.log("Can't find panorama in this direction.");
+        this.showToast({
+          text: 'Failed to find panorama in this direction',
+          color: 'red',
+        });
+      }
+    },
+    wipeCurrentMarkers: function() {
+      for (const marker of this.currentMarkers) {
+        marker.setMap(null);
+      }
+      this.currentMarkers = [];
+    },
+    undo: function() {
+      this.panorama.setPosition(this.undoMapPosition);
+    },
+    ...mapActions('toast', ['showToast']),
   },
   mounted: function() {
     this.panorama = new google.maps.StreetViewPanorama(
       document.getElementById('street-view-anchor'),
       {
-        position: this.mapPosition,
+        position: this.initialMapPosition,
         pov: DEFAULT_POV,
         zoom: 1,
         addressControl: false,
@@ -78,15 +229,51 @@ export default {
         panControl: true,
       },
     );
+    this.panorama.addListener('position_changed', () => {
+      const pos = this.panorama.getPosition();
+      this.mapPosition = pos.toJSON();
+      console.log('Position changed in streetview:', this.mapPosition);
+    });
   },
   watch: {
+    initialMapPosition: function(newValue) {
+      console.log(
+        'initialMapPosition changed, forcing streetview position to: ',
+        newValue,
+      );
+      this.panorama.setPosition(newValue);
+    },
     mapPosition: function(newValue, oldValue) {
-      // this is stupid, why do I even bother...
-      if (JSON.stringify(oldValue) != JSON.stringify(newValue)) {
-        this.$nextTick(function() {
-          this.panorama.setPosition(this.mapPosition);
-          this.panorama.setPov(DEFAULT_POV);
+      console.log('pos:', newValue, oldValue);
+      if (newValue.lat == oldValue.lat && newValue.lng == oldValue.lng) {
+        return;
+      }
+      this.undoMapPosition = oldValue;
+      console.log(
+        'mapPosition changed to',
+        newValue,
+        'emitting position_changed',
+      );
+      this.$emit('position_changed', newValue);
+    },
+    markerPositions: function(newMarkerPositions) {
+      this.wipeCurrentMarkers();
+      for (const marker of newMarkerPositions) {
+        const sanitizedName = sanitizeHtml(marker.name, {
+          allowedTags: [],
+          allowedAttributes: {},
+          disallowedTagsMode: 'recursiveEscape',
         });
+        const marker_obj = new google.maps.Marker({
+          position: marker.position,
+          map: this.panorama,
+          icon:
+            `http://chart.apis.google.com/chart?chst=d_map_spin&chld=2.1|0|` +
+            `${marker.color}|13|b|${sanitizedName}|` +
+            `${marker.distanceKm.toFixed(3)}km`,
+          title: sanitizedName,
+        });
+        this.currentMarkers.push(marker_obj);
       }
     },
   },

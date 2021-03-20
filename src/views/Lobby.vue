@@ -98,6 +98,7 @@ export default {
       playersDbRef: null,
       chiefDbRef: null,
       startedDbRef: null,
+      gameModeDbRef: null,
 
       startingGame: false,
       forceRegenerationOnStartGame: false,
@@ -110,23 +111,6 @@ export default {
       }
       this.startingGame = true;
       this.ensureGameGeneratedAndStart();
-    },
-    startGame() {
-      if (!this.startedDbRef) {
-        console.log('Trying to start game before "created"');
-      }
-      this.startedDbRef.set(true, error => {
-        if (error) {
-          console.log(error);
-          this.showDialog({
-            title: 'Connection Error',
-            text:
-              'There was a problem with connection to Firebase :( ' +
-              'Try again later.',
-          });
-          return;
-        }
-      });
     },
     cleanUp() {
       if (this.playersDbRef) {
@@ -165,7 +149,7 @@ export default {
             text:
               "Room you are trying to join doesn't exist. " +
               'Use correct link or create a new room.',
-            confirmAction: function() {
+            confirmAction: () => {
               this.cleanUpAndChangeView({ name: 'main' });
             },
           });
@@ -188,7 +172,7 @@ export default {
             this.showDialog({
               title: 'The game was deleted',
               text: 'Try to join another one or create your own',
-              confirmAction: function() {
+              confirmAction: () => {
                 this.cleanUpAndChangeView({ name: 'main' });
               },
             });
@@ -206,46 +190,92 @@ export default {
             this.showDialog({
               title: 'The game was deleted',
               text: 'Try to join another one or create your own',
-              confirmAction: function() {
+              confirmAction: () => {
                 this.cleanUpAndChangeView({ name: 'main' });
               },
             });
           }
           this.chief = chiefSnapshot.val();
         });
+        this.gameModeDbRef = roomRef.child('options').child('game_mode');
         this.startedDbRef = roomRef.child('started');
         this.startedDbRef.on('value', startedSnapshot => {
           if (!startedSnapshot.exists()) {
             this.showDialog({
               title: 'The game was deleted',
               text: 'Try to join another one or create your own',
-              confirmAction: function() {
+              confirmAction: () => {
                 this.cleanUpAndChangeView({ name: 'main' });
               },
             });
           }
           if (startedSnapshot.val() === true) {
-            this.cleanUpAndChangeView({
-              name: 'game',
-              params: { roomId: this.$route.params.roomId },
+            this.gameModeDbRef.once('value').then(gameMode => {
+              if (
+                gameMode.val() != 'classic' &&
+                gameMode.val() != 'rendezvous'
+              ) {
+                this.showDialog({
+                  title: `Game mode ${gameMode.val()} unknown`,
+                  text:
+                    "Room you are trying to access doesn't have a game mode set. " +
+                    'Create a new room.',
+                  confirmAction: () => {
+                    this.cleanUpAndChangeView({ name: 'main' });
+                  },
+                });
+              }
+              this.cleanUpAndChangeView({
+                name: gameMode.val(),
+                params: { roomId: this.$route.params.roomId },
+              });
             });
           }
         });
       });
     },
     async ensureGameGeneratedAndStart() {
-      this.waitToFinishGeneration()
-        .then(() => {
-          this.startGame();
-        })
-        .catch(error => {
+      try {
+        await this.waitToFinishGeneration();
+      } catch (error) {
+        this.startingGame = false;
+        this.forceRegenerationOnStartGame = true;
+        this.showDialog({
+          title: "Couldn't generate game",
+          text: 'Please try again later. ' + error,
+        });
+        return;
+      }
+      if (!this.startedDbRef || !this.gameModeDbRef) {
+        console.log('Trying to start game before "created"');
+        return;
+      }
+      let game_mode = await this.gameModeDbRef.once('value');
+      if (game_mode.val() == 'rendezvous') {
+        if (Object.keys(this.connected_players).length < 2) {
           this.startingGame = false;
           this.forceRegenerationOnStartGame = true;
           this.showDialog({
-            title: "Couldn't generate game",
-            text: 'Please try again later. ' + error,
+            title: 'Rendezvous needs at least 2 players',
+            text: 'Currently no single-player mode is implemented. Sorry :(',
           });
+          return;
+        }
+      }
+      try {
+        this.startedDbRef.set(true);
+      } catch (error) {
+        this.startingGame = false;
+        this.forceRegenerationOnStartGame = true;
+        console.log(error);
+        this.showDialog({
+          title: 'Connection Error',
+          text:
+            'There was a problem with connection to Firebase :( ' +
+            'Try again later.',
         });
+        return;
+      }
     },
     ...mapActions('gameGen', [
       'triggerGameRegeneration',
@@ -255,6 +285,7 @@ export default {
       'showPersistentDialog',
       'hidePersistentDialog',
     ]),
+    ...mapMutations('gameGen', ['setPlayers']),
     ...mapMutations('dialog', ['showDialog']),
   },
   computed: {
@@ -303,7 +334,7 @@ export default {
             text:
               "Room you are trying to access doesn't exist. " +
               'Use correct link or create a new room.',
-            confirmAction: function() {
+            confirmAction: () => {
               this.cleanUpAndChangeView({ name: 'main' });
             },
           });
@@ -324,8 +355,21 @@ export default {
     isChief: function(newVal) {
       if (!newVal) {
         console.error('We lost "chief" status! This should never happen!');
+        return;
       }
       this.triggerGameRegeneration({ roomPath: roomObjectPath(this.roomId) });
+    },
+    connected_players: function(newVal) {
+      // We can find out that we're the chief after we find out the list of
+      // players, so it's important to keep the game generation store updated
+      // even if we're not the chief.
+      this.setPlayers(newVal);
+      if (!this.isChief) {
+        return;
+      }
+      this.triggerGameRegeneration({
+        roomPath: roomObjectPath(this.roomId),
+      });
     },
   },
   unmounted: function() {

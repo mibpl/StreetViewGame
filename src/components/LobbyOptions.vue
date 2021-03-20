@@ -2,6 +2,25 @@
   <v-card outlined>
     <v-card-title>Game options</v-card-title>
     <v-container>
+      <v-container v-if="showGameModePicker">
+        <v-row>
+          <v-col>
+            <v-select
+              ref="gameMode"
+              v-model="gameMode"
+              :hint="gameModeProperties[gameMode].hint"
+              :items="Object.keys(gameModeProperties)"
+              :disabled="!isChief || gameModeSyncing"
+              item-text="mode"
+              item-value="mode"
+              label="Select game mode"
+              persistent-hint
+              return-object
+              single-line
+            ></v-select>
+          </v-col>
+        </v-row>
+      </v-container>
       <v-row>
         <v-col>
           <v-text-field
@@ -18,6 +37,26 @@
       </v-row>
       <v-row>
         <v-col>
+          <div
+            v-if="
+              gameMode == 'rendezvous' &&
+                selectedShapeNames.length == 0 &&
+                kmlUrl == ''
+            "
+          >
+            <span class="red--text">Warning:</span> for rendezvous to be
+            winnable the starting locations of all players must be connected
+            over streetview roads, but the location generation algorithm doesn't
+            take this into account. (E.g. if one player is in the Americas and
+            another in Asia, there is no way to win.) Select a location or
+            provide a KML URL below to decrease the chance of being in an
+            unwinnable game. You can use
+            <a
+              href="https://en.wikipedia.org/wiki/Coverage_of_Google_Street_View"
+              >wikipedia</a
+            >
+            as a guide to good starting locations.
+          </div>
           <v-autocomplete
             ref="shapesInput"
             v-model="selectedShapeNames"
@@ -67,12 +106,25 @@ export default {
   },
   data: function() {
     return {
+      gameMode: 'classic',
+      gameModeProperties: {
+        classic: {
+          hint:
+            'Players start at the same spot and must find their location on a map.',
+        },
+        rendezvous: {
+          hint:
+            'Players start at random locations and must rendezvous to a single location.',
+        },
+      },
       timeLimit: '',
       selectedShapeNames: [],
       kmlUrl: '',
       availableShapeNames: [],
       timeLimitSyncing: false,
       shapesInputSyncing: false,
+      gameModeSyncing: false,
+      showGameModePicker: true,
     };
   },
   computed: {
@@ -81,6 +133,12 @@ export default {
         .database()
         .ref(roomObjectPath(this.roomId))
         .child('options');
+    },
+    playersDbRef: function() {
+      return firebase
+        .database()
+        .ref(roomObjectPath(this.roomId))
+        .child('players');
     },
   },
   watch: {
@@ -96,12 +154,14 @@ export default {
       this.timeLimitSyncing = true;
       this.roomOptionsRef.child('time_limit').set(newTimeLimit, error => {
         if (error) {
-          console.log(error);
+          console.error(error);
           this.$emit('firebase_error', "Couldn't modify time limit.");
           this.timeLimit = oldTimeLimit;
         }
-        this.timeLimitSyncing = false;
-        this.$nextTick(() => this.$refs.timeLimitInput.focus());
+        this.$nextTick(() => {
+          this.timeLimitSyncing = false;
+          this.$refs.timeLimitInput.focus();
+        });
       });
     }, 500),
     selectedShapeNames: function(newSelectedShapes, oldSelectedShapes) {
@@ -114,7 +174,7 @@ export default {
       this.shapesInputSyncing = true;
       this.roomOptionsRef.child('shapes').set(newSelectedShapes, error => {
         if (error) {
-          console.log(error);
+          console.error(error);
           this.$emit('firebase_error', "Couldn't modify locations.");
           this.selectedShapeNames = oldSelectedShapes;
         } else {
@@ -123,8 +183,10 @@ export default {
             roomPath: roomObjectPath(this.roomId),
           });
         }
-        this.shapesInputSyncing = false;
-        this.$nextTick(() => this.$refs.shapesInput.focus());
+        this.$nextTick(() => {
+          this.shapesInputSyncing = false;
+          this.$refs.shapesInput.focus();
+        });
       });
     },
     kmlUrl: function(kmlUrlValue) {
@@ -133,7 +195,7 @@ export default {
       }
       this.roomOptionsRef.child('kml_url').set(kmlUrlValue, error => {
         if (error) {
-          console.log(error);
+          console.error(error);
           this.$emit('firebase_error', "Couldn't modify locations.");
         } else {
           this.setKmlUrl(kmlUrlValue);
@@ -143,10 +205,36 @@ export default {
         }
       });
     },
+    gameMode: function(gameModeValue, oldGameModeValue) {
+      if (!this.isChief) {
+        return;
+      }
+      if (this.gameModeSyncing) {
+        return;
+      }
+      this.gameModeSyncing = true;
+      this.roomOptionsRef.child('game_mode').set(gameModeValue, error => {
+        if (error) {
+          console.error(error);
+          this.$emit('firebase_error', "Couldn't modify game mode.");
+          this.gameMode = oldGameModeValue;
+        } else {
+          this.setGameMode(gameModeValue);
+          this.triggerGameRegeneration({
+            roomPath: roomObjectPath(this.roomId),
+          });
+        }
+        this.$nextTick(() => {
+          this.gameModeSyncing = false;
+          this.$refs.gameMode.focus();
+        });
+      });
+    },
     // Once we learn we are a chief, trigger all the computations needed.
     isChief: function(newVal) {
       if (!newVal) {
         console.error('We lost "chief" status! This should never happen!');
+        return;
       }
       // Stop watching for option changes.
       this.roomOptionsRef.off();
@@ -186,15 +274,28 @@ export default {
         const newKmlUrl = newOptions?.kml_url || '';
         this.kmlUrl = newKmlUrl;
         this.setKmlUrl(newKmlUrl);
+
+        const newGameMode = newOptions?.game_mode || '';
+        this.gameMode = newGameMode;
+        this.setGameMode(newGameMode);
       });
     },
     cleanUp() {
       if (this.roomOptionsRef) {
         this.roomOptionsRef.off();
       }
+      if (this.playersDbRef) {
+        this.playersDbRef.off();
+      }
     },
     ...mapActions('gameGen', ['triggerGameRegeneration']),
-    ...mapMutations('gameGen', ['setAvailableShapes', 'setSelectedShapes', 'setKmlUrl']),
+    ...mapMutations('gameGen', [
+      'setAvailableShapes',
+      'setSelectedShapes',
+      'setKmlUrl',
+      'setGameMode',
+      'setPlayers',
+    ]),
   },
   mounted: function() {
     this.watchOptionsChanges();
