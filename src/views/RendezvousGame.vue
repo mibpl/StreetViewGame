@@ -315,10 +315,11 @@ export default {
           this.deadlineTimerSet == null &&
           this.deadlineTimestamp != null
         ) {
-          setTimeout(
-            () => this.finishGame(false),
-            this.deadlineTimestamp - new Date().getTime(),
-          );
+          setTimeout(() => {
+            if (!this.checkForVictory()) {
+              this.finishGame(false);
+            }
+          }, this.deadlineTimestamp - new Date().getTime());
           this.deadlineTimerSet = true;
         }
 
@@ -362,10 +363,10 @@ export default {
     },
     checkForVictory: function() {
       if (this.finished) {
-        return;
+        return this.victory;
       }
       if (this.playerData == null) {
-        return;
+        return false;
       }
       if (Object.keys(this.playerData).length <= 1) return false;
       let max_distance_km = 0;
@@ -380,10 +381,11 @@ export default {
         }
       }
       if (max_distance_km > 0.01) {
-        return;
+        return false;
       }
       // Within 10m.
       this.finishGame(true);
+      return true;
     },
     finishGame: function(victory) {
       if (this.finished) {
@@ -442,12 +444,8 @@ export default {
       updateDict[`rendezvous_data/player_data/${player_uuid}`] = null;
       this.roomDbRef.update(updateDict);
     },
-    ...mapMutations('persistentDialog', [
-      'showPersistentDialog',
-    ]),
-    ...mapActions('persistentDialog', [
-      'hidePersistentDialogAction',
-    ]),
+    ...mapMutations('persistentDialog', ['showPersistentDialog']),
+    ...mapActions('persistentDialog', ['hidePersistentDialogAction']),
     ...mapMutations('dialog', ['showDialog']),
   },
 };

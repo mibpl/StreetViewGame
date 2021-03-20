@@ -361,8 +361,8 @@ export default {
     },
     connected_players: function(newVal) {
       // We can find out that we're the chief after we find out the list of
-      // players, so it's important to fix keep the game generation store
-      // updated even if we're not the chief.
+      // players, so it's important to keep the game generation store updated
+      // even if we're not the chief.
       this.setPlayers(newVal);
       if (!this.isChief) {
         return;

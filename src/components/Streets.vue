@@ -244,7 +244,7 @@ export default {
       this.panorama.setPosition(newValue);
     },
     mapPosition: function(newValue, oldValue) {
-      console.log("pos:", newValue, oldValue);
+      console.log('pos:', newValue, oldValue);
       if (newValue.lat == oldValue.lat && newValue.lng == oldValue.lng) {
         return;
       }
