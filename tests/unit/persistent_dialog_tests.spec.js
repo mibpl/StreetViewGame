@@ -43,22 +43,22 @@ describe('PersistentDialog', () => {
 
   it('not renered by default', () => {
     const wrapper = mountDialog({});
-    expect(wrapper.find('.v-dialog--active').exists()).toBe(false);
+    expect(wrapper.find('.v-overlay--active').exists()).toBe(false);
   });
 
   it('is renered after showPersistentDialog', () => {
     store.commit('persistentDialog/showPersistentDialog', {});
     const wrapper = mountDialog({});
-    expect(wrapper.get('.v-dialog--active'));
+    expect(wrapper.get('.v-overlay--active'));
   });
 
   it('disappears after hidePersistentDialog', async () => {
     store.commit('persistentDialog/showPersistentDialog', {});
     const wrapper = mountDialog({});
-    expect(wrapper.get('.v-dialog--active'));
+    expect(wrapper.get('.v-overlay--active'));
     store.commit('persistentDialog/hidePersistentDialog', {});
     await wrapper.vm.$nextTick();
-    expect(wrapper.find('.v-dialog--active').exists()).toBe(false);
+    expect(wrapper.find('.v-overlay--active').exists()).toBe(false);
   });
 
   it('renders correct text', () => {

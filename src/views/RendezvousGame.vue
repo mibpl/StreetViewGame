@@ -433,7 +433,7 @@ export default {
       const player_uuid = event.player_uuid;
       if (Object.keys(this.players).length <= 2) {
         this.showDialog({
-          title: "Can't kick two or fewer players left",
+          title: "Can't kick when two or fewer players left",
           text: 'Create a new game instead',
         });
         return;
