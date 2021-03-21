@@ -1,6 +1,6 @@
 const state = {
   visible: false,
-  hide_timestamp_ms: 2000,
+  hide_timestamp_ms: 0,
   color: 'gray',
   text: '',
 };

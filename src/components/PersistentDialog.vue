@@ -1,12 +1,11 @@
 <template>
-  <v-dialog persistent max-width="60vw" v-model="visible">
+  <v-overlay :value="visible" max-width="60vw">
     <v-card>
-      <v-card-title></v-card-title>
       <v-card-text>
         {{ text }}
       </v-card-text>
     </v-card>
-  </v-dialog>
+  </v-overlay>
 </template>
 
 <script>

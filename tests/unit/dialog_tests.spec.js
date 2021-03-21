@@ -43,13 +43,13 @@ describe('Dialog', () => {
 
   it('not renered by default', () => {
     const wrapper = mountDialog({});
-    expect(wrapper.find('.v-dialog--active').exists()).toBe(false);
+    expect(wrapper.find('.v-overlay--active').exists()).toBe(false);
   });
 
   it('is renered after showDialog', () => {
     store.commit('dialog/showDialog', {});
     const wrapper = mountDialog({});
-    expect(wrapper.get('.v-dialog--active'));
+    expect(wrapper.get('.v-overlay--active'));
   });
 
   it('renders correct title and text', () => {
@@ -63,9 +63,9 @@ describe('Dialog', () => {
     store.commit('dialog/showDialog', { title: 'Title', text: 'Text' });
     const wrapper = mountDialog({});
 
-    expect(wrapper.find('.v-dialog--active').exists()).toBe(true);
+    expect(wrapper.find('.v-overlay--active').exists()).toBe(true);
     await wrapper.get('#confirm_btn').trigger('click');
-    expect(wrapper.find('.v-dialog--active').exists()).toBe(false);
+    expect(wrapper.find('.v-overlay--active').exists()).toBe(false);
   });
 
   it('triggers action on button click', async () => {

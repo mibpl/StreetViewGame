@@ -1,5 +1,5 @@
 <template>
-  <v-dialog max-width="60vw" v-model="visible">
+  <v-overlay :value="visible" max-width="60vw">
     <v-card>
       <v-card-title class="headline">
         {{ title }}
@@ -15,7 +15,7 @@
         </v-btn>
       </v-card-actions>
     </v-card>
-  </v-dialog>
+  </v-overlay>
 </template>
 
 <script>
