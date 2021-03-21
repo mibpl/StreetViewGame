@@ -18,6 +18,12 @@ handlers:
   - url: /lobby/.*
     static_files: index.html
     upload: index.html
+  - url: /classic/.*
+    static_files: index.html
+    upload: index.html
+  - url: /rendezvous/.*
+    static_files: index.html
+    upload: index.html
   - url: /(.*)$
     static_files: \1
     upload: (.*)
