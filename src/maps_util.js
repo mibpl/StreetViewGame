@@ -157,8 +157,14 @@ class GoogleMapsWrapper {
   }
 
   colorForUuid(user_uuid) {
-    const colorInd = user_uuid.charCodeAt(0) % Object.values(colors).length;
-    return Object.values(colors)[colorInd].base;
+    const colorArr = [];
+    for (let i = 0; i < Object.values(colors).length; i++) {
+      if (Object.values(colors)[i].base != null) {
+        colorArr.push(Object.values(colors)[i].base);
+      }
+    }
+    const colorInd = user_uuid.charCodeAt(0) % colorArr.length;
+    return colorArr[colorInd];
   }
 }
 
