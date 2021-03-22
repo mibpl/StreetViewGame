@@ -76,11 +76,17 @@ export default {
         });
         const position_history = this.player_data[key].position_history;
         const starting_position = position_history[0];
+        let color = maps_util.colorForUuid(key, Object.keys(this.players));
         const startMarker = new google.maps.Marker({
           position: starting_position,
           map: this.map,
           title: `Start for ${username}`,
           label: `Start for ${username}`,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            strokeColor: color,
+            scale: 5,
+          },
         });
         this.markers.push(startMarker);
         let deduped_history = [starting_position];
@@ -101,11 +107,23 @@ export default {
           content: `${sanitizedUsername}: ${total_distance.toFixed(2)} km`,
         });
         info.open(this.map, startMarker);
-        let color = maps_util.colorForUuid(key, Object.keys(this.players));
+
+        const lineSymbol = {
+          path: google.maps.SymbolPath.FORWARD_OPEN_ARROW,
+          strokeOpacity: .5,
+        };
         const line = new google.maps.Polyline({
           path: deduped_history,
           map: this.map,
           strokeColor: color,
+          icons: [
+            {
+              icon: lineSymbol,
+              offset: "5%",
+              repeat: "5%",
+            },
+          ],
+          strokeOpacity: 0.7,
         });
         this.markers.push(line);
       }
