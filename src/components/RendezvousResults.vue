@@ -101,7 +101,7 @@ export default {
           content: `${sanitizedUsername}: ${total_distance.toFixed(2)} km`,
         });
         info.open(this.map, startMarker);
-        let color = maps_util.colorForUuid(key);
+        let color = maps_util.colorForUuid(key, Object.keys(this.players));
         const line = new google.maps.Polyline({
           path: deduped_history,
           map: this.map,

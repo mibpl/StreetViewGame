@@ -60,6 +60,12 @@ def make_parser():
 def load_geojson_and_verify(path: str) -> geojson.feature.FeatureCollection:
   with open(path) as geojson_file:
     geojson_obj = geojson.load(geojson_file)
+  if type(geojson_obj) == geojson.feature.Feature:
+    print(
+      "[WARNING] Input file is a Feature, not a FeatureCollection. "
+      "Will create a single-item Collection"
+    )
+    geojson_obj = geojson.feature.FeatureCollection([geojson_obj])
   if type(geojson_obj) != geojson.feature.FeatureCollection:
     raise ValueError('Input file should contain FeatureCollection at its root '
                      f'but it contains {type(geojson_obj)}.')
@@ -109,7 +115,7 @@ def area_for_feature(feature: geojson.feature.Feature) -> float:
 def feature_filename(
     feature: geojson.feature.Feature,
 ) -> str:
-  return feature['properties']['name'].replace(' ', '_') + '.json'
+  return feature['properties']['name'].replace(' ', '_') + '.geojson'
 
 
 def find_feature_by_name(

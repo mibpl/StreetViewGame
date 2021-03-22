@@ -258,7 +258,7 @@ export default {
           otherPlayerPosition,
         );
         const username = data.username;
-        let color = maps_util.colorForUuid(uuid).substr(1);
+        let color = maps_util.colorForUuid(uuid, Object.keys(this.players)).substr(1);
         const playerPosition = {
           name: username,
           distanceKm: distanceKm,

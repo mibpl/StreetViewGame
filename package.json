@@ -9,7 +9,8 @@
     "test:e2e": "vue-cli-service test:e2e --mode development",
     "test:e2e:headless": "./run_e2e_with_emulators.sh",
     "lint": "vue-cli-service lint",
-    "publish": "gcloud builds submit --config cloudbuild.yaml --async"
+    "publish": "gcloud builds submit --config cloudbuild.yaml --async",
+    "serve-locations-static": "python locations/scripts/serve.py"
   },
   "dependencies": {
     "@turf/boolean-point-in-polygon": "^6.0.1",
