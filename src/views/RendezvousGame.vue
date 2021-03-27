@@ -121,14 +121,11 @@
   width: 400px;
   height: 200px;
   left: 0;
-
   bottom: 0;
   background-color: rgba(145, 10, 172, 0.5);
   z-index: 2;
   cursor: pointer;
   display: block;
-  scale: 0.5;
-
   transition: all 0.2s ease-in-out;
 }
 
