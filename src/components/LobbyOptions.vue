@@ -40,8 +40,8 @@
           <div
             v-if="
               gameMode == 'rendezvous' &&
-              selectedShapeNames.length == 0 &&
-              kmlPoints.length == 0
+                selectedShapeNames.length == 0 &&
+                kmlPointCount == 0
             "
           >
             <span class="red--text">Warning:</span> for rendezvous to be
