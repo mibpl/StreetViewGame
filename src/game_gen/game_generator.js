@@ -36,21 +36,23 @@ export class GameGenerator {
     this.getShapeOptsFn = getShapeOptsFn;
   }
 
-  startGeneration(gameMode, shapeNames, kmlUrl, players) {
+  startGeneration(gameMode, shapeNames, kmlPoints, players, panoramaLookupPrecision) {
     console.log(
       'Starting game generation. gameMode: ',
       gameMode,
       'shapeNames: ',
       shapeNames,
-      'kmlUrl: ',
-      kmlUrl,
+      'length of kmlPoints: ',
+      kmlPoints?.length,
       'players: ',
       players,
+      'panoramaLookupPrecision: ',
+      panoramaLookupPrecision,
       'generator: ',
       this,
     );
-    if (kmlUrl != null && kmlUrl != '') {
-      this.work = this.fetchKmlAndGenerateGame(gameMode, kmlUrl, players);
+    if (kmlPoints != null && kmlPoints.length > 0) {
+      this.work = this.fetchKmlAndGenerateGame(gameMode, kmlPoints, players, panoramaLookupPrecision);
     } else {
       this.work = this.fetchShapesAndGenerateGame(
         gameMode,
@@ -98,28 +100,29 @@ export class GameGenerator {
   }
 
   async generateValidPositionFromKmlPoints() {
-    console.log('Generating from Kml');
-    if (this.kmlPoints.length == 0) {
-      return null;
-    }
+    while(true) {
+      if (this.kmlPoints.length == 0) {
+        return null;
+      }
 
-    let p = this.kmlPoints[0];
-    if (this.kmlPoints.length > 1) {
-      p = this.kmlPoints.pop();
-    }
+      let p = this.kmlPoints[0];
+      if (this.kmlPoints.length > 1) {
+        p = this.kmlPoints.pop();
+      }
 
-    let actualPosition = await maps.getClosestPanorama(
-      { lat: p[1], lng: p[0] },
-      100,
-    );
-    if (actualPosition) return actualPosition;
+      let actualPosition = await maps.getClosestPanorama(
+        { lat: p[1], lng: p[0] },
+        this.panoramaLookupPrecision,
+      );
+      if (actualPosition) return actualPosition;
+      console.log("Discarding point with no panorama", p);
+    }
     return null;
   }
 
-  async fetchKmlAndGenerateGame(gameMode, kmlUrl, players) {
-    let points = await this.fetchKml(kmlUrl);
-
-    this.kmlPoints = this.shuffleArray(points);
+  async fetchKmlAndGenerateGame(gameMode, kmlPoints, players, panoramaLookupPrecision) {
+    this.kmlPoints = this.shuffleArray(kmlPoints);
+    this.panoramaLookupPrecision = panoramaLookupPrecision;
 
     if (this.cancelled) throw new CancelledError();
     await this.generateGameState(
@@ -127,31 +130,6 @@ export class GameGenerator {
       players,
       this.generateValidPositionFromKmlPoints.bind(this),
     );
-  }
-
-  async fetchKml(kmlUrl) {
-    if (this.cancelled) throw new CancelledError();
-    const kmlData = await parseKML.readKml(kmlUrl);
-
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(kmlData, 'text/xml');
-
-    const result = xmlDoc.evaluate(
-      "//*[local-name()='coordinates']/text()",
-      xmlDoc,
-      null,
-      XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE,
-      null,
-    );
-    let points = [];
-    for (var i = 0; i < result.snapshotLength; i++) {
-      const item = result.snapshotItem(i);
-      const coordsStr = item.textContent.trim().split(',');
-      const x = parseFloat(coordsStr[0]);
-      const y = parseFloat(coordsStr[1]);
-      points.push([x, y]);
-    }
-    return points;
   }
 
   async fetchShapes(shapeNames) {

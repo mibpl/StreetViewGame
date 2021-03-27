@@ -6,7 +6,8 @@ const state = {
   cachedShapes: {},
   gameGenerator: null,
   startedRegenerations: [],
-  kmlUrl: null,
+  kmlPoints: null,
+  panoramaLookupPrecision: 100,
 };
 
 const getters = {};
@@ -15,8 +16,8 @@ const mutations = {
   setNewGameGenerator(state, { gameGenerator }) {
     state.gameGenerator = gameGenerator;
   },
-  startGameGenerator(state, { gameMode, shapeNames, kmlUrl, players }) {
-    state.gameGenerator.startGeneration(gameMode, shapeNames, kmlUrl, players);
+  startGameGenerator(state, { gameMode, shapeNames, kmlPoints, players, panoramaLookupPrecision }) {
+    state.gameGenerator.startGeneration(gameMode, shapeNames, kmlPoints, players, panoramaLookupPrecision);
   },
   cancelCurrentGenerator(state) {
     state.gameGenerator.cancel();
@@ -39,8 +40,11 @@ const mutations = {
   setAvailableShapes(state, { shapes }) {
     state.availableShapes = shapes;
   },
-  setKmlUrl(state, kmlUrl) {
-    state.kmlUrl = kmlUrl;
+  setKmlPoints(state, points) {
+    state.kmlPoints = points;
+  },
+  setPanoramaLookupPrecision(state, panoramaLookupPrecision) {
+    state.panoramaLookupPrecision = panoramaLookupPrecision;
   },
   setGameMode(state, gameMode) {
     state.gameMode = gameMode;
@@ -95,8 +99,9 @@ const actions = {
     commit('startGameGenerator', {
       gameMode: state.gameMode,
       shapeNames: state.currentlySelectedShapes,
-      kmlUrl: state.kmlUrl,
+      kmlPoints: state.kmlPoints,
       players: state.players,
+      panoramaLookupPrecision: state.panoramaLookupPrecision,
     });
   },
   async waitToFinishGeneration({ state, commit }) {
