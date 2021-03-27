@@ -40,8 +40,8 @@
           <div
             v-if="
               gameMode == 'rendezvous' &&
-                selectedShapeNames.length == 0 &&
-                kmlUrl == ''
+              selectedShapeNames.length == 0 &&
+              kmlPoints.length == 0
             "
           >
             <span class="red--text">Warning:</span> for rendezvous to be
@@ -72,11 +72,29 @@
       </v-row>
       <v-row>
         <v-col>
-          <v-text-field
-            ref="kmlUrlInput"
-            v-model="kmlUrl"
-            label="kml url (optional)"
+          <input
+            type="file"
+            v-on:change="locationFileChange"
             :disabled="!isChief"
+            accept="application/vnd.google-earth.kml+xml"
+            class="input-file"
+          />
+          <div v-if="kmlPointCount > 0">
+            {{ kmlPointCount }} locations loaded
+          </div>
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col>
+          <v-text-field
+            ref="panoramaLookupPrecision"
+            v-model="panoramaLookupPrecision"
+            :min="100"
+            :max="1000000"
+            label="Panorama lookup precision (meters)"
+            type="number"
+            :disabled="!isChief || kmlPointCount == 0"
+            clearable
           />
         </v-col>
       </v-row>
@@ -104,7 +122,7 @@ export default {
       required: true,
     },
   },
-  data: function() {
+  data: function () {
     return {
       gameMode: 'classic',
       gameModeProperties: {
@@ -119,22 +137,23 @@ export default {
       },
       timeLimit: '',
       selectedShapeNames: [],
-      kmlUrl: '',
+      kmlPointCount: 0,
       availableShapeNames: [],
       timeLimitSyncing: false,
       shapesInputSyncing: false,
       gameModeSyncing: false,
       showGameModePicker: true,
+      panoramaLookupPrecision: 100,
     };
   },
   computed: {
-    roomOptionsRef: function() {
+    roomOptionsRef: function () {
       return firebase
         .database()
         .ref(roomObjectPath(this.roomId))
         .child('options');
     },
-    playersDbRef: function() {
+    playersDbRef: function () {
       return firebase
         .database()
         .ref(roomObjectPath(this.roomId))
@@ -144,7 +163,7 @@ export default {
   watch: {
     // Debounce causes the function to be fired at most once in the specified
     // time period.
-    timeLimit: _.debounce(function(newTimeLimit, oldTimeLimit) {
+    timeLimit: _.debounce(function (newTimeLimit, oldTimeLimit) {
       if (!this.isChief) {
         return;
       }
@@ -152,7 +171,7 @@ export default {
         return;
       }
       this.timeLimitSyncing = true;
-      this.roomOptionsRef.child('time_limit').set(newTimeLimit, error => {
+      this.roomOptionsRef.child('time_limit').set(newTimeLimit, (error) => {
         if (error) {
           console.error(error);
           this.$emit('firebase_error', "Couldn't modify time limit.");
@@ -164,7 +183,14 @@ export default {
         });
       });
     }, 500),
-    selectedShapeNames: function(newSelectedShapes, oldSelectedShapes) {
+    panoramaLookupPrecision: function (newValue) {
+      if (!this.isChief) {
+        return;
+      }
+      this.setPanoramaLookupPrecision(newValue);
+      this.panoramaLookupPrecision = newValue;
+    },
+    selectedShapeNames: function (newSelectedShapes, oldSelectedShapes) {
       if (!this.isChief) {
         return;
       }
@@ -172,7 +198,7 @@ export default {
         return;
       }
       this.shapesInputSyncing = true;
-      this.roomOptionsRef.child('shapes').set(newSelectedShapes, error => {
+      this.roomOptionsRef.child('shapes').set(newSelectedShapes, (error) => {
         if (error) {
           console.error(error);
           this.$emit('firebase_error', "Couldn't modify locations.");
@@ -189,23 +215,7 @@ export default {
         });
       });
     },
-    kmlUrl: function(kmlUrlValue) {
-      if (!this.isChief) {
-        return;
-      }
-      this.roomOptionsRef.child('kml_url').set(kmlUrlValue, error => {
-        if (error) {
-          console.error(error);
-          this.$emit('firebase_error', "Couldn't modify locations.");
-        } else {
-          this.setKmlUrl(kmlUrlValue);
-          this.triggerGameRegeneration({
-            roomPath: roomObjectPath(this.roomId),
-          });
-        }
-      });
-    },
-    gameMode: function(gameModeValue, oldGameModeValue) {
+    gameMode: function (gameModeValue, oldGameModeValue) {
       if (!this.isChief) {
         return;
       }
@@ -213,7 +223,7 @@ export default {
         return;
       }
       this.gameModeSyncing = true;
-      this.roomOptionsRef.child('game_mode').set(gameModeValue, error => {
+      this.roomOptionsRef.child('game_mode').set(gameModeValue, (error) => {
         if (error) {
           console.error(error);
           this.$emit('firebase_error', "Couldn't modify game mode.");
@@ -231,7 +241,7 @@ export default {
       });
     },
     // Once we learn we are a chief, trigger all the computations needed.
-    isChief: function(newVal) {
+    isChief: function (newVal) {
       if (!newVal) {
         console.error('We lost "chief" status! This should never happen!');
         return;
@@ -244,19 +254,54 @@ export default {
     },
   },
   methods: {
+    locationFileChange(data) {
+      if (!this.isChief) {
+        return;
+      }
+
+      const files = data.target.files;
+      if (files.length == 1) {
+        files[0].text().then((data) => {
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(data, 'text/xml');
+
+          const result = xmlDoc.evaluate(
+            "//*[local-name()='coordinates']/text()",
+            xmlDoc,
+            null,
+            XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE,
+            null,
+          );
+          let points = [];
+          for (var i = 0; i < result.snapshotLength; i++) {
+            const item = result.snapshotItem(i);
+            const coordsStr = item.textContent.trim().split(',');
+            const x = parseFloat(coordsStr[0]);
+            const y = parseFloat(coordsStr[1]);
+            points.push([x, y]);
+          }
+
+          this.kmlPointCount = points.length;
+          this.setKmlPoints(points);
+          this.triggerGameRegeneration({
+            roomPath: roomObjectPath(this.roomId),
+          });
+        });
+      }
+    },
     loadAvailableShapes() {
       return fetchShapesIndex()
-        .then(shapesIndex => {
+        .then((shapesIndex) => {
           console.log('Fetched following shapes:', shapesIndex);
           this.setAvailableShapes({ shapes: shapesIndex });
           this.availableShapeNames = Object.keys(shapesIndex).sort();
         })
-        .catch(error => {
+        .catch((error) => {
           console.error('Failed to fetch shapes index. ', error);
         });
     },
     watchOptionsChanges() {
-      this.roomOptionsRef.on('value', optionsSnapshot => {
+      this.roomOptionsRef.on('value', (optionsSnapshot) => {
         const newOptions = optionsSnapshot.val();
 
         const newTimeLimit = newOptions?.time_limit || '';
@@ -270,10 +315,6 @@ export default {
         this.availableShapeNames = newShapes;
         this.selectedShapeNames = newShapes;
         this.setSelectedShapes({ shapes: newShapes });
-
-        const newKmlUrl = newOptions?.kml_url || '';
-        this.kmlUrl = newKmlUrl;
-        this.setKmlUrl(newKmlUrl);
 
         const newGameMode = newOptions?.game_mode || '';
         this.gameMode = newGameMode;
@@ -292,15 +333,16 @@ export default {
     ...mapMutations('gameGen', [
       'setAvailableShapes',
       'setSelectedShapes',
-      'setKmlUrl',
+      'setKmlPoints',
       'setGameMode',
       'setPlayers',
+      'setPanoramaLookupPrecision',
     ]),
   },
-  mounted: function() {
+  mounted: function () {
     this.watchOptionsChanges();
   },
-  unmounted: function() {
+  unmounted: function () {
     this.cleanUp();
   },
 };
