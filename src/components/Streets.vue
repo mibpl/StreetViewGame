@@ -49,6 +49,15 @@
         >1km</v-btn
       >
       <v-btn
+        id="jump-button-50m"
+        class="jump-button"
+        fab
+        elevation="0"
+        color="secondary"
+        @click="jump(0.05)"
+        >50m</v-btn
+      >
+      <v-btn
         id="undo-button"
         class="jump-button"
         fab
@@ -96,20 +105,24 @@
   bottom: 210px;
 }
 
+#jump-button-50m {
+  bottom: 280px;
+}
+
 #jump-button-1 {
-  bottom: 310px;
+  bottom: 350px;
 }
 
 #jump-button-10 {
-  bottom: 410px;
+  bottom: 420px;
 }
 
 #jump-button-50 {
-  bottom: 510px;
+  bottom: 490px;
 }
 
 #jump-button-500 {
-  bottom: 610px;
+  bottom: 560px;
 }
 
 #street-view-anchor {
@@ -169,7 +182,7 @@ export default {
         distance_km,
         bearing_deg,
       );
-      if (new_position != null) {
+      if (new_position.destination != null) {
         this.panorama.setPosition(new_position.destination);
         if (
           distance_km * 0.9 < new_position.distance_km &&
@@ -188,7 +201,9 @@ export default {
         }
       } else {
         this.showToast({
-          text: 'Failed to find panorama in this direction',
+          text:
+            'Stopped searching for panorama at distance: ' +
+            `${new_position.stopped_at_distance_km.toFixed(2)} km`,
           color: 'red',
         });
       }

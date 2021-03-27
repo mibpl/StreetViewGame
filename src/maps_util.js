@@ -67,23 +67,24 @@ class GoogleMapsWrapper {
   // If no panorama was found, will return null instead.
   async jumpByDistanceAndBearing(point, distance_km, bearing_deg) {
     // (lng, lat) is the turf coordinate format.
-    const num_attempts = 10;
+    const num_attempts = 25;
     let panorama = null;
+    let current_distance_km = distance_km;
+    let last_attempt_distance_km = distance_km;
     for (let attempt = 0; attempt < num_attempts; attempt++) {
-      let fraction = (num_attempts - attempt) / num_attempts;
       const jump_point_turf = destination(
         [point.lng, point.lat],
-        distance_km * fraction,
+        current_distance_km,
         bearing_deg,
       ).geometry.coordinates;
-      // We first attempt to jump by distance_km, searching in a radius of 0.1 * distance_km.
-      // If that fails we attempt to back off each time by 1/num_attempts of distance_km.
-      // The radius gets progressively narrower to maintain the same distance-to-search radius proportion.
-      const radius_m = distance_km * 0.1 * fraction * 1000;
+      // TODO: document how this works.
+      const radius_m = current_distance_km * 0.1 * 1000;
       panorama = await this.getClosestPanorama(
         { lat: jump_point_turf[1], lng: jump_point_turf[0] },
         radius_m,
       );
+      last_attempt_distance_km = current_distance_km;
+      current_distance_km -= (radius_m / 1000) * 1.1;
       if (panorama != null) {
         break;
       }
@@ -94,7 +95,9 @@ class GoogleMapsWrapper {
         distance_km: this.haversine_distance(point, panorama),
       };
     }
-    return null;
+    return {
+      stopped_at_distance_km: last_attempt_distance_km,
+    };
   }
 
   // Returns an average of the given points, which can be used as an approximate center
