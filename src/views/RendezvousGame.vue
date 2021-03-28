@@ -41,6 +41,34 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <v-dialog max-width="60vw" v-model="giveUpVisible">
+      <v-card>
+        <v-card-title class="headline">
+          Are you sure you want to give up?
+        </v-card-title>
+        <v-card-text>
+          Giving up will take you to the end screen, and you won't be able to go
+          back.
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            id="confirm_btn"
+            color="red"
+            @click="
+              giveUpVisible = false;
+              finishGame(false);
+            "
+          >
+            Give up
+          </v-btn>
+          <v-btn id="confirm_btn" color="blue" @click="giveUpVisible = false">
+            Keep playing
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     <v-overlay :value="finished" id="win-overlay">
       <v-card light height="100%">
         <v-card-title>
@@ -71,10 +99,23 @@
           <v-btn
             class="white--text"
             small
-            color="accent"
+            color="primary"
             v-on:click="instructionsVisible = true"
           >
             How to play
+          </v-btn>
+        </v-col>
+        <v-col
+          v-if="isChief()"
+          class="flex-grow-0 flex-shrink-1 pa-0 ml-0 mr-3"
+        >
+          <v-btn
+            class="white--text"
+            small
+            color="primary"
+            v-on:click="giveUpVisible = true"
+          >
+            Give up
           </v-btn>
         </v-col>
         <v-col class="flex-grow-1 flex-shrink-0 pa-0 ma-0">
@@ -189,6 +230,7 @@ export default {
       teleportEnabled: false,
       deadlineTimerSet: null,
       instructionsVisible: false,
+      giveUpVisible: false,
     };
   },
   mounted: function() {
@@ -255,7 +297,9 @@ export default {
           otherPlayerPosition,
         );
         const username = data.username;
-        let color = maps_util.colorForUuid(uuid, Object.keys(this.players)).substr(1);
+        let color = maps_util
+          .colorForUuid(uuid, Object.keys(this.players))
+          .substr(1);
         const playerPosition = {
           name: username,
           distanceKm: distanceKm,
