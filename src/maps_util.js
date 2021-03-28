@@ -66,8 +66,15 @@ class GoogleMapsWrapper {
   // `distance_km`: the distance of the found point wrt. the starting point.
   // If no panorama was found, will return null instead.
   async jumpByDistanceAndBearing(point, distance_km, bearing_deg) {
-    // (lng, lat) is the turf coordinate format.
-    const num_attempts = 25;
+    // We try to search for points in a triangle with heigth distance_km
+    // and base 0.1 * height. However, we must approximate this by covering
+    // the triangle with circles. The current_distance_km backoff computation
+    // below is a heuristic attempt to tradeoff the area coverage of the
+    // triangle, the distance from the player at which we stop trying
+    // (currently around 49km for a jump of 500km), and number of attempts.
+    // To try to optimize this yourself, see src/tool/JumpSimulator.ipynb.
+    const num_attempts = 15;
+    const cone_atan = 0.1;
     let panorama = null;
     let current_distance_km = distance_km;
     let last_attempt_distance_km = distance_km;
@@ -77,14 +84,13 @@ class GoogleMapsWrapper {
         current_distance_km,
         bearing_deg,
       ).geometry.coordinates;
-      // TODO: document how this works.
-      const radius_m = current_distance_km * 0.1 * 1000;
+      const radius_m = current_distance_km * cone_atan * 1000;
       panorama = await this.getClosestPanorama(
         { lat: jump_point_turf[1], lng: jump_point_turf[0] },
         radius_m,
       );
       last_attempt_distance_km = current_distance_km;
-      current_distance_km -= (radius_m / 1000) * 1.1;
+      current_distance_km -= (radius_m / 1000) * 1.4 * Math.pow(1.013, attempt);
       if (panorama != null) {
         break;
       }
