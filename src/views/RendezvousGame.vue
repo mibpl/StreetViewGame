@@ -376,10 +376,9 @@ export default {
           max_distance_km = Math.max(max_distance_km, distance_km);
         }
       }
-      if (max_distance_km > 0.01) {
+      if (max_distance_km > 0.05) {
         return false;
       }
-      // Within 10m.
       this.finishGame(true);
       return true;
     },
