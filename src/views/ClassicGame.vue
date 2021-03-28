@@ -143,6 +143,7 @@ export default {
     return {
       mapPosition: { lat: 37.75598, lng: -122.41231 },
       round: 0,
+      syncedRound: -1,
       roomState: {},
       guesses: {},
       players: {},
@@ -223,7 +224,14 @@ export default {
         this.timeLimit = roomState.options?.time_limit || null;
 
         this.round = roomState.current_round;
-        this.mapPosition = roomState.rounds[this.round].map_position;
+        if (this.syncedRound < this.round) {
+          // The first time after a round starts we want to sync the
+          // streetview position, but afterwards we don't want to update
+          // when the database changes for other reasons (e.g. because
+          // a guess was made).
+          this.mapPosition = roomState.rounds[this.round].map_position;
+          this.syncedRound = this.round;
+        }
         this.currentSummary = roomState.rounds[this.round].summary;
         this.guesses = roomState.rounds[this.round].guesses;
         if (!this.guesses) {
