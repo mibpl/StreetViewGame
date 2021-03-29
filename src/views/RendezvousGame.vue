@@ -217,7 +217,8 @@ export default {
   },
   data: function() {
     return {
-      initialMapPosition: { lat: 37.75598, lng: -122.41231 },
+      // See Streets.vue panorama initialization for why this is empty.
+      initialMapPosition: {},
       initialMapPositionSet: false,
       finished: false,
       victory: false,

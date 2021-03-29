@@ -160,8 +160,9 @@ export default {
   },
   data: function() {
     return {
-      mapPosition: { lat: 37.75598, lng: -122.41231 },
-      undoMapPosition: null,
+      mapPosition: null,
+      undoPanoramaId: null,
+      currentPanoramaId: null,
       currentMarkers: [],
     };
   },
@@ -215,33 +216,76 @@ export default {
       this.currentMarkers = [];
     },
     undo: function() {
-      this.panorama.setPosition(this.undoMapPosition);
+      if (this.undoPanoramaId == null) {
+        this.showToast({
+          text: 'Undo position not yet set.',
+          color: 'red',
+        });
+        return;
+      }
+      this.panorama.setPano(this.undoPanoramaId);
+    },
+    ensureStreetviewLoaded: function(startingPosition) {
+      if (this?.panorama != null) {
+        return;
+      }
+      this.panorama = new google.maps.StreetViewPanorama(
+        document.getElementById('street-view-anchor'),
+        {
+          // Unfortunately providing a nice initial position (e.g. Hon Sushi)
+          // doesn't work well with history and undo functionalities needed for
+          // rendezvous.
+          // When the initial position was Hon Sushi, it was impossible to tell
+          // if an update event for position or panorama changes was associated
+          // with loading of the initial location, or with loading of the true
+          // start location (especially since Hon Sushi may well be the true
+          // start location if using KML).
+          // Two consequences of this were:
+          // 1. It was possible for Hon Sushi to end up in the player's history
+          // under a race condition.
+          // 2. It was possible to undo after refreshing the page to teleport to
+          // Hon Sushi.
+          position: startingPosition,
+          pov: DEFAULT_POV,
+          zoom: 1,
+          addressControl: false,
+          clickToGo: true,
+          fullscreenControl: false,
+          imageDateControl: false,
+          linksControl: false,
+          showRoadLabels: false,
+          panControl: true,
+        },
+      );
+      this.panorama.addListener('pano_changed', () => {
+        // We track panoramas for use in undo. The reason is that panoramas
+        // are more unique than positions (you can get many position change
+        // events after a movement, but you'll get only a single panorama
+        // change event). A side effect of undo being based on panoramas
+        // is that it's almost instant (presumably because of caching)
+        // and also hopefully won't teleport you on top of a bridge
+        // if you were underneath it.
+        // This can happen e.g. if you go to this location:
+        // {"lat":-1.60719831050869,"lng":-45.08128731721289}.
+        let panoramaId = this.panorama.getPano();
+        if (panoramaId == null || panoramaId == this.currentPanoramaId) {
+          return;
+        }
+        this.undoPanoramaId = this.currentPanoramaId;
+        this.currentPanoramaId = panoramaId;
+      });
+      this.panorama.addListener('position_changed', () => {
+        this.mapPosition = this.panorama.getPosition().toJSON();
+      });
     },
     ...mapActions('toast', ['showToast']),
   },
-  mounted: function() {
-    this.panorama = new google.maps.StreetViewPanorama(
-      document.getElementById('street-view-anchor'),
-      {
-        position: this.initialMapPosition,
-        pov: DEFAULT_POV,
-        zoom: 1,
-        addressControl: false,
-        clickToGo: true,
-        fullscreenControl: false,
-        imageDateControl: false,
-        linksControl: false,
-        showRoadLabels: false,
-        panControl: true,
-      },
-    );
-    this.panorama.addListener('position_changed', () => {
-      const pos = this.panorama.getPosition();
-      this.mapPosition = pos.toJSON();
-    });
-  },
   watch: {
     initialMapPosition: function(newValue) {
+      if (newValue?.lat == null || newValue?.lng == null) {
+        return;
+      }
+      this.ensureStreetviewLoaded(newValue);
       console.log(
         'initialMapPosition changed, forcing streetview position to: ',
         newValue,
@@ -249,10 +293,12 @@ export default {
       this.panorama.setPosition(newValue);
     },
     mapPosition: function(newValue, oldValue) {
-      if (newValue.lat == oldValue.lat && newValue.lng == oldValue.lng) {
+      if (newValue?.lat == null || newValue?.lng == null) {
         return;
       }
-      this.undoMapPosition = oldValue;
+      if (newValue.lat == oldValue?.lat && newValue.lng == oldValue?.lng) {
+        return;
+      }
       console.log(
         'mapPosition changed to',
         newValue,
