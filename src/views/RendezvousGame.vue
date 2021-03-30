@@ -70,17 +70,15 @@
       </v-card>
     </v-dialog>
     <v-overlay :value="finished" id="win-overlay">
-      <v-card light height="100%">
+      <v-card light height="100%" style="position: relative">
         <v-card-title>
           Results
         </v-card-title>
-        <v-container>
-          <RendezvousResults
-            v-bind:players="players"
-            v-bind:player_data="playerData"
-            v-bind:victory="victory"
-          />
-        </v-container>
+        <RendezvousResults
+          v-bind:players="players"
+          v-bind:player_data="playerData"
+          v-bind:victory="victory"
+        />
         <v-card-actions class="card-bottom">
           <v-btn
             class="white--text"
@@ -333,9 +331,8 @@ export default {
           this.initialMapPosition = this.playerData[
             this.$store.state.auth.uid
           ].map_position;
-          this.positionHistory = this.playerData[
-            this.$store.state.auth.uid
-          ].position_history;
+          this.positionHistory =
+            this.playerData[this.$store.state.auth.uid].position_history ?? [];
           this.initialMapPositionSet = true;
         }
 
@@ -376,9 +373,16 @@ export default {
       this.roomDbRef.on('value', cb.bind(this));
     },
     positionChanged: function(event) {
-      const position = { lat: event.lat, lng: event.lng };
+      const position = {
+        lat: event.lat,
+        lng: event.lng,
+        time: new Date().getTime(),
+      };
       if (!this.initialMapPositionSet) {
         console.log('Received position event before initial position sync.');
+        return;
+      }
+      if (this.finished) {
         return;
       }
       this.positionHistory.push(position);
