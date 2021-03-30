@@ -122,7 +122,7 @@ export default {
       required: true,
     },
   },
-  data: function () {
+  data: function() {
     return {
       gameMode: 'classic',
       gameModeProperties: {
@@ -147,13 +147,13 @@ export default {
     };
   },
   computed: {
-    roomOptionsRef: function () {
+    roomOptionsRef: function() {
       return firebase
         .database()
         .ref(roomObjectPath(this.roomId))
         .child('options');
     },
-    playersDbRef: function () {
+    playersDbRef: function() {
       return firebase
         .database()
         .ref(roomObjectPath(this.roomId))
@@ -163,7 +163,7 @@ export default {
   watch: {
     // Debounce causes the function to be fired at most once in the specified
     // time period.
-    timeLimit: _.debounce(function (newTimeLimit, oldTimeLimit) {
+    timeLimit: _.debounce(function(newTimeLimit, oldTimeLimit) {
       if (!this.isChief) {
         return;
       }
@@ -171,7 +171,7 @@ export default {
         return;
       }
       this.timeLimitSyncing = true;
-      this.roomOptionsRef.child('time_limit').set(newTimeLimit, (error) => {
+      this.roomOptionsRef.child('time_limit').set(newTimeLimit, error => {
         if (error) {
           console.error(error);
           this.$emit('firebase_error', "Couldn't modify time limit.");
@@ -183,14 +183,14 @@ export default {
         });
       });
     }, 500),
-    panoramaLookupPrecision: function (newValue) {
+    panoramaLookupPrecision: function(newValue) {
       if (!this.isChief) {
         return;
       }
       this.setPanoramaLookupPrecision(newValue);
       this.panoramaLookupPrecision = newValue;
     },
-    selectedShapeNames: function (newSelectedShapes, oldSelectedShapes) {
+    selectedShapeNames: function(newSelectedShapes, oldSelectedShapes) {
       if (!this.isChief) {
         return;
       }
@@ -198,7 +198,7 @@ export default {
         return;
       }
       this.shapesInputSyncing = true;
-      this.roomOptionsRef.child('shapes').set(newSelectedShapes, (error) => {
+      this.roomOptionsRef.child('shapes').set(newSelectedShapes, error => {
         if (error) {
           console.error(error);
           this.$emit('firebase_error', "Couldn't modify locations.");
@@ -215,7 +215,7 @@ export default {
         });
       });
     },
-    gameMode: function (gameModeValue, oldGameModeValue) {
+    gameMode: function(gameModeValue, oldGameModeValue) {
       if (!this.isChief) {
         return;
       }
@@ -223,7 +223,7 @@ export default {
         return;
       }
       this.gameModeSyncing = true;
-      this.roomOptionsRef.child('game_mode').set(gameModeValue, (error) => {
+      this.roomOptionsRef.child('game_mode').set(gameModeValue, error => {
         if (error) {
           console.error(error);
           this.$emit('firebase_error', "Couldn't modify game mode.");
@@ -241,7 +241,7 @@ export default {
       });
     },
     // Once we learn we are a chief, trigger all the computations needed.
-    isChief: function (newVal) {
+    isChief: function(newVal) {
       if (!newVal) {
         console.error('We lost "chief" status! This should never happen!');
         return;
@@ -261,7 +261,7 @@ export default {
 
       const files = data.target.files;
       if (files.length == 1) {
-        files[0].text().then((data) => {
+        files[0].text().then(data => {
           const parser = new DOMParser();
           const xmlDoc = parser.parseFromString(data, 'text/xml');
 
@@ -291,17 +291,17 @@ export default {
     },
     loadAvailableShapes() {
       return fetchShapesIndex()
-        .then((shapesIndex) => {
+        .then(shapesIndex => {
           console.log('Fetched following shapes:', shapesIndex);
           this.setAvailableShapes({ shapes: shapesIndex });
           this.availableShapeNames = Object.keys(shapesIndex).sort();
         })
-        .catch((error) => {
+        .catch(error => {
           console.error('Failed to fetch shapes index. ', error);
         });
     },
     watchOptionsChanges() {
-      this.roomOptionsRef.on('value', (optionsSnapshot) => {
+      this.roomOptionsRef.on('value', optionsSnapshot => {
         const newOptions = optionsSnapshot.val();
 
         const newTimeLimit = newOptions?.time_limit || '';
@@ -339,10 +339,10 @@ export default {
       'setPanoramaLookupPrecision',
     ]),
   },
-  mounted: function () {
+  mounted: function() {
     this.watchOptionsChanges();
   },
-  unmounted: function () {
+  unmounted: function() {
     this.cleanUp();
   },
 };

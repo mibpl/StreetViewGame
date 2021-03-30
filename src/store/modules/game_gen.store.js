@@ -16,8 +16,17 @@ const mutations = {
   setNewGameGenerator(state, { gameGenerator }) {
     state.gameGenerator = gameGenerator;
   },
-  startGameGenerator(state, { gameMode, shapeNames, kmlPoints, players, panoramaLookupPrecision }) {
-    state.gameGenerator.startGeneration(gameMode, shapeNames, kmlPoints, players, panoramaLookupPrecision);
+  startGameGenerator(
+    state,
+    { gameMode, shapeNames, kmlPoints, players, panoramaLookupPrecision },
+  ) {
+    state.gameGenerator.startGeneration(
+      gameMode,
+      shapeNames,
+      kmlPoints,
+      players,
+      panoramaLookupPrecision,
+    );
   },
   cancelCurrentGenerator(state) {
     state.gameGenerator.cancel();

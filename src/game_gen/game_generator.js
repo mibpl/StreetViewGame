@@ -3,7 +3,6 @@ import 'firebase/database';
 import { randomPoint } from '@turf/random';
 import maps from '@/maps_util.js';
 import { fetchShape } from '@/game_gen/shapes_util';
-const parseKML = require('parse-kml');
 
 export class CancelledError extends Error {
   constructor() {
@@ -36,7 +35,13 @@ export class GameGenerator {
     this.getShapeOptsFn = getShapeOptsFn;
   }
 
-  startGeneration(gameMode, shapeNames, kmlPoints, players, panoramaLookupPrecision) {
+  startGeneration(
+    gameMode,
+    shapeNames,
+    kmlPoints,
+    players,
+    panoramaLookupPrecision,
+  ) {
     console.log(
       'Starting game generation. gameMode: ',
       gameMode,
@@ -52,7 +57,12 @@ export class GameGenerator {
       this,
     );
     if (kmlPoints != null && kmlPoints.length > 0) {
-      this.work = this.fetchKmlAndGenerateGame(gameMode, kmlPoints, players, panoramaLookupPrecision);
+      this.work = this.fetchKmlAndGenerateGame(
+        gameMode,
+        kmlPoints,
+        players,
+        panoramaLookupPrecision,
+      );
     } else {
       this.work = this.fetchShapesAndGenerateGame(
         gameMode,
@@ -100,7 +110,7 @@ export class GameGenerator {
   }
 
   async generateValidPositionFromKmlPoints() {
-    while(true) {
+    while (true) {
       if (this.kmlPoints.length == 0) {
         return null;
       }
@@ -115,12 +125,17 @@ export class GameGenerator {
         this.panoramaLookupPrecision,
       );
       if (actualPosition) return actualPosition;
-      console.log("Discarding point with no panorama", p);
+      console.log('Discarding point with no panorama', p);
     }
     return null;
   }
 
-  async fetchKmlAndGenerateGame(gameMode, kmlPoints, players, panoramaLookupPrecision) {
+  async fetchKmlAndGenerateGame(
+    gameMode,
+    kmlPoints,
+    players,
+    panoramaLookupPrecision,
+  ) {
     this.kmlPoints = this.shuffleArray(kmlPoints);
     this.panoramaLookupPrecision = panoramaLookupPrecision;
 
@@ -207,7 +222,7 @@ export class GameGenerator {
       }
       rendezvous_player_data[player] = {
         map_position: position,
-        position_history: [position],
+        position_history: [],
       };
     }
     const rendezvous_data = {
