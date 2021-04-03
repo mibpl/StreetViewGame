@@ -130,15 +130,27 @@
       v-on:position_changed="positionChanged($event)"
       v-bind:jumpButtonsEnabled="true"
       v-bind:backToStartEnabled="false"
-      v-bind:markerPositions="streetviewMarkerPositions"
+      v-bind:playerMarkers="streetviewMarkerPositions"
+      v-bind:beaconMarkers="beaconMarkers"
     />
     <div id="map-overlay">
       <MarkerMap
         v-bind:deadlineTimestamp="deadlineTimestamp"
         v-bind:guessingEnabled="false"
+        v-bind:beaconMarkers="beaconMarkers"
         @on-click="teleport($event)"
+        @on-beacon-click="teleportToBeacon($event)"
       />
     </div>
+    <v-btn
+      id="beacon-button"
+      fab
+      elevation="0"
+      color="primary"
+      @click="addBeacon()"
+    >
+      <v-icon large>mdi-radio-tower</v-icon>
+    </v-btn>
     <PersistentDialog />
     <Dialog />
     <Toast />
@@ -183,6 +195,15 @@
   bottom: 0;
   right: 0;
 }
+
+#beacon-button {
+  position: absolute;
+  z-index: 2;
+  left: 10px;
+  width: 50px;
+  height: 50px;
+  top: 50px;
+}
 </style>
 
 <script>
@@ -199,6 +220,9 @@ import Toast from '@/components/Toast';
 import { roomObjectPath, signInGuard, roomGuard } from '@/firebase_utils.js';
 import { mapMutations, mapActions } from 'vuex';
 import maps_util from '@/maps_util';
+import _ from 'lodash';
+import { v4 as uuidv4 } from 'uuid';
+import { randomPoint } from '@turf/random';
 
 var roomState = {};
 
@@ -223,6 +247,7 @@ export default {
       roomState: {},
       players: {},
       playerData: {},
+      positionHistory: [],
       currentChief: '',
       timeLimit: null,
       deadlineTimestamp: null,
@@ -230,6 +255,7 @@ export default {
       deadlineTimerSet: null,
       instructionsVisible: false,
       giveUpVisible: false,
+      beacons: {},
     };
   },
   mounted: function() {
@@ -283,9 +309,9 @@ export default {
       return this.$route.params.roomId;
     },
     streetviewMarkerPositions: function() {
-      let markerPositions = [];
+      let markerPositions = {};
       if (Object.keys(this.playerData).length == 0) {
-        return [];
+        return {};
       }
       let playerCurrentPosition = this.playerData[this.$store.state.auth.uid]
         .map_position;
@@ -305,9 +331,36 @@ export default {
           position: otherPlayerPosition,
           color: color,
         };
-        markerPositions.push(playerPosition);
+        markerPositions[uuid] = playerPosition;
       }
+      console.error(markerPositions);
       return markerPositions;
+    },
+    playerUuid: function() {
+      return this.$store.state.auth.uid;
+    },
+    lastPosition: function() {
+      if (this.positionHistory.length == 0) {
+        return null;
+      }
+      let position = this.positionHistory[this.positionHistory.length - 1];
+      return position;
+    },
+    beaconMarkers: function() {
+      let markers = {};
+      for (const [beacon_uuid, beacon] of Object.entries(this.beacons)) {
+        markers[beacon_uuid] = {
+          position: beacon.position,
+          radius_km: beacon.radius_km,
+          connected: beacon_uuid in this.playerBeacons,
+          in_range:
+            this.lastPosition != null &&
+            maps_util.haversine_distance(this.lastPosition, beacon.position) <
+              beacon.radius_km,
+          followups: beacon.followups,
+        };
+      }
+      return markers;
     },
   },
   methods: {
@@ -323,6 +376,14 @@ export default {
         this.currentChief = roomState.chief;
 
         this.playerData = roomState.rendezvous_data.player_data;
+        const beacons = roomState.rendezvous_data.beacons ?? {};
+        if (!_.isEqual(beacons, this.beacons ?? {})) {
+          // We don't modify the existing beacons if the keys are the same
+          // (a key should identify a beacon uniquely, and beacon details don't
+          // change). This prevents constant and ugly marker map UI refreshes.
+          this.beacons = beacons;
+          this.checkForNearbyBeacons();
+        }
         this.finished = roomState.rendezvous_data.finished;
         this.victory = roomState.rendezvous_data.victory;
         if (!this.initialMapPositionSet) {
@@ -336,6 +397,8 @@ export default {
           this.initialMapPositionSet = true;
         }
 
+        this.playerBeacons =
+          this.playerData[this.$store.state.auth.uid].beacons ?? {};
         this.timeLimit = roomState.options?.time_limit || null;
         this.deadlineTimestamp = roomState.rendezvous_data.deadline || null;
 
@@ -386,22 +449,24 @@ export default {
         return;
       }
       this.positionHistory.push(position);
-      this.roomDbRef
-        .child('rendezvous_data')
-        .child('player_data')
-        .child(this.$store.state.auth.uid)
-        .set(
-          { map_position: position, position_history: this.positionHistory },
-          error => {
-            if (error) {
-              console.log(error);
-              this.$emit(
-                'firebase_error',
-                "Couldn't modify map position in database.",
-              );
-            }
-          },
-        );
+      let update_dict = {};
+      update_dict[
+        `rendezvous_data/player_data/${this.playerUuid}/map_position`
+      ] = position;
+      update_dict[
+        `rendezvous_data/player_data/${this.playerUuid}/position_history`
+      ] = this.positionHistory;
+      this.roomDbRef.update(update_dict, error => {
+        if (error) {
+          console.log(error);
+          this.$emit(
+            'firebase_error',
+            "Couldn't modify map position in database.",
+          );
+        }
+      });
+      this.checkForNearbyBeacons();
+      console.error("END: ", new Date().getTime());
     },
     cleanUpAndChangeView(location) {
       this.roomDbRef.off();
@@ -460,6 +525,20 @@ export default {
         this.initialMapPosition = newStreetviewPosition;
       }
     },
+    async teleportToBeacon(beaconId) {
+      console.log('Teleport to ', beaconId);
+      const newStreetviewPosition = await maps_util.getClosestPanorama(
+        this.beacons[beaconId].position,
+      );
+      console.log('Found: ', newStreetviewPosition);
+      if (newStreetviewPosition != null) {
+        // TODO: show toast on success.
+        this.initialMapPosition = newStreetviewPosition;
+      } else {
+        // TODO: show dialog on failure.
+        console.error('Failed to teleport');
+      }
+    },
     isChief() {
       return this.$store.state.auth.uid == this.currentChief;
     },
@@ -475,7 +554,7 @@ export default {
       });
     },
     kickPlayer(event) {
-      const player_uuid = event.player_uuid;
+      const kicked_player_uuid = event.player_uuid;
       if (Object.keys(this.players).length <= 2) {
         this.showDialog({
           title: "Can't kick when two or fewer players left",
@@ -484,9 +563,176 @@ export default {
         return;
       }
       let updateDict = {};
-      updateDict[`players/${player_uuid}`] = null;
-      updateDict[`rendezvous_data/player_data/${player_uuid}`] = null;
+      updateDict[`players/${kicked_player_uuid}`] = null;
+      updateDict[`rendezvous_data/player_data/${kicked_player_uuid}`] = null;
       this.roomDbRef.update(updateDict);
+    },
+    addBeacon() {
+      // TODO: make beacons have different colors?
+      // TODO: make sure followup beacon is at least some distance away (e.g. 5 km).
+      // TODO: make beacon streetview size bigger than players
+      // TODO: point of interest as locations for possible beacons
+      // TODO: resolve other todos.
+      // TODO: error handling everywhere
+      if (this.finished) {
+        return;
+      }
+      let beacon_uuid = null;
+      let parent_uuid = null;
+      if (Object.keys(this.beacons).length > 0) {
+        for (const [existing_uuid, beacon] of Object.entries(this.beacons)) {
+          for (const [followup_uuid, followup] of Object.entries(
+            beacon.followups,
+          )) {
+            if (
+              maps_util.haversine_distance(
+                this.lastPosition,
+                followup.position,
+              ) < 0.05
+            ) {
+              beacon_uuid = followup_uuid;
+              parent_uuid = existing_uuid;
+              break;
+            }
+          }
+          if (beacon_uuid != null) {
+            break;
+          }
+        }
+        if (beacon_uuid == null) {
+          this.showDialog({
+            title: "Can't set up a beacon here",
+            text:
+              'A beacon already exists on the map. Additional beacons can ' +
+              'only be placed in compatible locations revealed by the first ' +
+              'beacon (see marker map).',
+          });
+          return;
+        }
+      } else {
+        beacon_uuid = uuidv4();
+      }
+      let distances_km = [];
+      for (const player of Object.values(this.playerData)) {
+        let distance_km = maps_util.haversine_distance(
+          this.lastPosition,
+          player.map_position,
+        );
+        distances_km.push(distance_km);
+      }
+      distances_km.sort((a, b) => a - b);
+      if (distances_km[1] > 0.05) {
+        this.showDialog({
+          title: "Can't set up beacon without help",
+          text:
+            'To set up a beacon you must have help from another ' +
+            'person (within 50m).',
+        });
+        return;
+      }
+      const median_distance_km =
+        distances_km[Math.ceil(distances_km.length / 2)];
+      let update_dict = {};
+      update_dict[`rendezvous_data/beacons/${beacon_uuid}`] = {
+        position: { lat: this.lastPosition.lat, lng: this.lastPosition.lng },
+        creation_time: new Date().getTime(),
+        radius_km: median_distance_km,
+      };
+      console.error('parent uuid', parent_uuid);
+      if (parent_uuid != null) {
+        console.error(
+          'removing followup: ',
+          `rendezvous_data/beacons/${parent_uuid}/followups/${beacon_uuid}`,
+        );
+        update_dict[
+          `rendezvous_data/beacons/${parent_uuid}/followups/${beacon_uuid}/used`
+        ] = true;
+      }
+      // TODO: Show error on failure to write.
+      this.roomDbRef.update(update_dict);
+      this.checkForNearbyBeacons();
+      this.generateCandidateBeacons(this.lastPosition, followup => {
+        console.error('candidate beacons', followup);
+        const followup_uuid = uuidv4();
+        let update_dict = {};
+        update_dict[
+          `rendezvous_data/beacons/${beacon_uuid}/followups/${followup_uuid}`
+        ] = {
+          position: { lat: followup.lat, lng: followup.lng },
+        };
+        this.roomDbRef.update(update_dict);
+      });
+    },
+    checkForNearbyBeacons() {
+      console.error('checking for beacons');
+      if (this.positionHistory.length == 0) {
+        return;
+      }
+      let position = this.positionHistory[this.positionHistory.length - 1];
+      let update_dict = {};
+      for (const [beacon_uuid, beacon] of Object.entries(this.beacons)) {
+        if (
+          !(beacon_uuid in this.playerBeacons) &&
+          maps_util.haversine_distance(position, beacon.position) < 0.05
+        ) {
+          update_dict[
+            `rendezvous_data/player_data/${this.playerUuid}/beacons/${beacon_uuid}`
+          ] = true;
+        }
+      }
+      this.roomDbRef.update(update_dict);
+    },
+    normalizeLng(val) {
+      while (val < -180) {
+        val += 360;
+      }
+      while (val > 180) {
+        val -= 360;
+      }
+      return val;
+    },
+    normalizeLat(val) {
+      if (val < -90) {
+        return -90;
+      }
+      if (val > 90) {
+        return 90;
+      }
+      return val;
+    },
+    async generateCandidateBeacons(position, cb) {
+      console.error('generating', position);
+      let points = randomPoint(20, {
+        bbox: [
+          this.normalizeLng(position.lng - 1),
+          this.normalizeLat(position.lat - 1),
+          this.normalizeLng(position.lng + 1),
+          this.normalizeLat(position.lat + 1),
+        ],
+      });
+      console.error('candidate points', points);
+      let points_emitted = 0;
+      for (const point of points.features) {
+        const latlng = {
+          lat: point.geometry.coordinates[1],
+          lng: point.geometry.coordinates[0],
+        };
+        if (maps_util.haversine_distance(latlng, position) < 5) {
+          continue;
+        }
+        let actualPosition = await maps_util.getClosestPanorama({
+          lat: point.geometry.coordinates[1],
+          lng: point.geometry.coordinates[0],
+        });
+        if (actualPosition) {
+          points_emitted += 1;
+          cb(actualPosition);
+          if (points_emitted >= 10) {
+            break;
+          }
+        }
+      }
+      // TODO: show toast on point generated?
     },
     ...mapMutations('persistentDialog', ['showPersistentDialog']),
     ...mapActions('persistentDialog', ['hidePersistentDialogAction']),

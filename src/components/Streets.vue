@@ -133,6 +133,7 @@
 <script>
 import maps from '@/maps_util.js';
 import sanitizeHtml from 'sanitize-html';
+import colors from 'vuetify/lib/util/colors';
 import { mapActions } from 'vuex';
 
 /*global google*/
@@ -153,8 +154,12 @@ export default {
       type: Boolean,
       required: true,
     },
-    markerPositions: {
-      type: Array,
+    playerMarkers: {
+      type: Object,
+      required: false,
+    },
+    beaconMarkers: {
+      type: Object,
       required: false,
     },
   },
@@ -163,7 +168,8 @@ export default {
       mapPosition: null,
       undoPanoramaId: null,
       currentPanoramaId: null,
-      currentMarkers: [],
+      mapPlayerMarkers: {},
+      mapBeaconMarkers: {},
     };
   },
   name: 'Streets',
@@ -278,6 +284,86 @@ export default {
         this.mapPosition = this.panorama.getPosition().toJSON();
       });
     },
+    refreshMarkers: function() {
+      //if (Object.values(this.currentMarkers).length != 0) {
+      //  console.error(this.currentMarkers.length);
+      //  return;
+      //}
+      //this.wipeCurrentMarkers();
+      // TODO: use streetview APIs to reposition pins, rather than regenerating them.
+      for (const [player_uuid, marker_info] of Object.entries(
+        this.playerMarkers,
+      )) {
+        const sanitizedName = sanitizeHtml(marker_info.name, {
+          allowedTags: [],
+          allowedAttributes: {},
+          disallowedTagsMode: 'recursiveEscape',
+        });
+        const icon =
+          'http://chart.apis.google.com/chart?chst=d_map_spin&' +
+          `chld=2.1|0|${marker_info.color}|13|b|${sanitizedName}|` +
+          `${marker_info.distanceKm.toFixed(3)}km`;
+        if (player_uuid in this.mapPlayerMarkers) {
+          this.mapPlayerMarkers[player_uuid].setPosition(marker_info.position);
+          this.mapPlayerMarkers[player_uuid].setOptions({
+            icon: icon,
+          });
+        } else {
+          const marker_obj = new google.maps.Marker({
+            position: marker_info.position,
+            map: this.panorama,
+            icon: icon,
+            title: sanitizedName,
+          });
+          this.mapPlayerMarkers[player_uuid] = marker_obj;
+        }
+      }
+      for (const [beacon_uuid, beacon] of Object.entries(this.beaconMarkers)) {
+        const marker_icon = beacon.connected ? 'glyphish_redo' : 'glyphish_zap';
+        const marker_color = beacon.connected
+          ? colors.blue.base.substr(1)
+          : colors.grey.base.substr(1);
+        const icon =
+          'https://chart.apis.google.com/chart?chst=d_map_pin_icon' +
+          `&chld=${marker_icon}|${marker_color}`;
+        if (beacon_uuid in this.mapBeaconMarkers) {
+          this.mapBeaconMarkers[beacon_uuid].marker.setOptions({
+            icon: icon,
+          });
+          for (const [followup_uuid, followup] of Object.entries(
+            beacon?.followups ?? {},
+          )) {
+            if (followup_uuid in this.mapBeaconMarkers[beacon_uuid].followups) {
+              if (followup.used) {
+                this.mapBeaconMarkers[beacon_uuid].followups[
+                  followup_uuid
+                ].setMap(null);
+              }
+            } else {
+              if (followup.used) {
+                continue;
+              }
+              const followup_obj = new google.maps.Marker({
+                position: followup.position,
+                map: this.panorama,
+              });
+              this.mapBeaconMarkers[beacon_uuid].followups[
+                followup_uuid
+              ] = followup_obj;
+            }
+          }
+        } else {
+          this.mapBeaconMarkers[beacon_uuid] = {
+            marker: new google.maps.Marker({
+              position: beacon.position,
+              map: this.panorama,
+              icon: icon,
+            }),
+            followups: {},
+          };
+        }
+      }
+    },
     ...mapActions('toast', ['showToast']),
   },
   watch: {
@@ -306,25 +392,11 @@ export default {
       );
       this.$emit('position_changed', newValue);
     },
-    markerPositions: function(newMarkerPositions) {
-      this.wipeCurrentMarkers();
-      for (const marker of newMarkerPositions) {
-        const sanitizedName = sanitizeHtml(marker.name, {
-          allowedTags: [],
-          allowedAttributes: {},
-          disallowedTagsMode: 'recursiveEscape',
-        });
-        const marker_obj = new google.maps.Marker({
-          position: marker.position,
-          map: this.panorama,
-          icon:
-            `http://chart.apis.google.com/chart?chst=d_map_spin&chld=2.1|0|` +
-            `${marker.color}|13|b|${sanitizedName}|` +
-            `${marker.distanceKm.toFixed(3)}km`,
-          title: sanitizedName,
-        });
-        this.currentMarkers.push(marker_obj);
-      }
+    playerMarkers: function() {
+      this.refreshMarkers();
+    },
+    beaconMarkers: function() {
+      this.refreshMarkers();
     },
   },
 };
