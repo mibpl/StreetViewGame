@@ -222,13 +222,16 @@ export class GameGenerator {
       }
       rendezvous_player_data[player] = {
         map_position: position,
-        position_history: [],
+        position_history: null,
       };
     }
     const rendezvous_data = {
       player_data: rendezvous_player_data,
+      beacons: null,
+      victory: false,
       finished: false,
     };
+    console.error('write', rendezvous_data);
 
     if (this.cancelled) throw new CancelledError();
 
