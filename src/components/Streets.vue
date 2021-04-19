@@ -146,6 +146,10 @@ export default {
       type: Object,
       required: true,
     },
+    triggerTeleportToPanoramaId: {
+      type: Object,
+      required: false,
+    },
     backToStartEnabled: {
       type: Boolean,
       required: true,
@@ -279,18 +283,13 @@ export default {
         }
         this.undoPanoramaId = this.currentPanoramaId;
         this.currentPanoramaId = panoramaId;
+        this.$emit('pano_changed', panoramaId);
       });
       this.panorama.addListener('position_changed', () => {
         this.mapPosition = this.panorama.getPosition().toJSON();
       });
     },
     refreshMarkers: function() {
-      //if (Object.values(this.currentMarkers).length != 0) {
-      //  console.error(this.currentMarkers.length);
-      //  return;
-      //}
-      //this.wipeCurrentMarkers();
-      // TODO: use streetview APIs to reposition pins, rather than regenerating them.
       for (const [player_uuid, marker_info] of Object.entries(
         this.playerMarkers,
       )) {
@@ -346,6 +345,9 @@ export default {
               const followup_obj = new google.maps.Marker({
                 position: followup.position,
                 map: this.panorama,
+                icon:
+                  'https://chart.apis.google.com/chart?chst=d_map_pin_icon' +
+                  `&chld=glyphish_lock|${colors.grey.base.substr(1)}`,
               });
               this.mapBeaconMarkers[beacon_uuid].followups[
                 followup_uuid
@@ -377,6 +379,17 @@ export default {
         newValue,
       );
       this.panorama.setPosition(newValue);
+    },
+    triggerTeleportToPanoramaId: function(newValue) {
+      if (newValue.panoramaId == '') {
+        return;
+      }
+      this.ensureStreetviewLoaded(newValue);
+      console.log(
+        'triggerTeleportToPanoramaId changed, forcing streetview panorama to: ',
+        newValue,
+      );
+      this.panorama.setPano(newValue.panoramaId);
     },
     mapPosition: function(newValue, oldValue) {
       if (newValue?.lat == null || newValue?.lng == null) {
