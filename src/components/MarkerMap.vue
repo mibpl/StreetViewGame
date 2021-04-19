@@ -141,13 +141,16 @@ export default {
             strokeColor: beacon.in_range ? colors.blue.base : colors.grey.base,
             fillColor: beacon.in_range ? colors.blue.base : colors.grey.base,
           });
-          // TODO: instead of using the chart API, we should have static pins (maybe SVG) to make the rendering
-          // less laggy. The chart API means we redownload the icons frequently. This will also help (probably)
+          // TODO: instead of using the chart API, we should have static pins
+          // (maybe SVG) to make the rendering less laggy. The chart API means
+          // we redownload the icons frequently. This will also help (probably)
           // make the pins within streetview appear more reliably.
           // TODO: test playability on a non-monster laptop.
           this.mapBeacons[id].marker.setOptions({
             clickable: beacon.connected,
-            icon: `https://chart.apis.google.com/chart?chst=d_map_pin_icon&chld=${marker_icon}|${marker_color}`,
+            icon:
+              'https://chart.apis.google.com/chart?chst=d_map_pin_icon' +
+              `&chld=${marker_icon}|${marker_color}`,
           });
           for (const [followup_id, followup] of Object.entries(
             beacon?.followups ?? {},
@@ -159,6 +162,9 @@ export default {
                 position: followup.position,
                 map: this.map,
                 clickable: false,
+                icon:
+                  'https://chart.apis.google.com/chart?chst=d_map_pin_icon' +
+                  `&chld=glyphish_lock|${colors.grey.base.substr(1)}`,
               });
             }
             if (
@@ -195,7 +201,9 @@ export default {
           marker: new google.maps.Marker({
             position: beacon.position,
             map: this.map,
-            icon: `https://chart.apis.google.com/chart?chst=d_map_pin_icon&chld=${marker_icon}|${marker_color}`,
+            icon:
+              'https://chart.apis.google.com/chart?chst=d_map_pin_icon' +
+              `&chld=${marker_icon}|${marker_color}`,
             clickable: beacon.connected,
           }),
           followups: {},
