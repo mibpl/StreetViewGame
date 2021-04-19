@@ -1,37 +1,38 @@
 <template>
   <div id="rendezvous-card">
-    <v-card class="d-flex flex-column" flat>
-      <v-card class="px-3 py-0 ma-0" flat>
-        <v-slider
-          label="Game duration"
-          thumb-label="always"
-          v-bind:max="timelineProps.minutes"
-          v-model="maxTimeMinutes"
-        >
-          <template v-slot:thumb-label="{ value }"> {{ value }}m </template>
-        </v-slider>
+    <v-card class="d-flex flex-row" flat>
+      <v-card class="px-3 py-0 ma-0 flex-shrink-1" flat>
+        <v-data-table :headers="details_headers" :items="detailedResults"
+        hide-default-footer
+        ></v-data-table>
       </v-card>
-      <v-card class="d-flex flex-row" flat>
-        <v-card v-for="user in users" v-bind:key="user.key" flat>
-          <v-checkbox
-            class="mx-1 my-0 pa-0 player-checkbox"
-            v-model="selectedPlayers"
-            v-bind:label="user.username"
-            v-bind:value="user.key"
-            v-bind:background-color="user.color"
-            dark
-            dense
-          ></v-checkbox>
+      <v-card class="d-flex flex-column flex-grow-1" flat>
+        <v-card class="px-3 py-0 ma-0" flat>
+          <v-slider
+            label="Game duration"
+            thumb-label="always"
+            v-bind:max="timelineProps.minutes"
+            v-model="maxTimeMinutes"
+          >
+            <template v-slot:thumb-label="{ value }"> {{ value }}m </template>
+          </v-slider>
         </v-card>
-        <v-checkbox
-          class="ml-auto mr-5 my-0 pa-0"
-          v-model="showDetails"
-          label="show details"
-          dense
-        ></v-checkbox>
+        <v-card class="d-flex flex-row" flat>
+          <v-card v-for="user in users" v-bind:key="user.key" flat>
+            <v-checkbox
+              class="mx-1 my-0 pa-0 player-checkbox"
+              v-model="selectedPlayers"
+              v-bind:label="user.username"
+              v-bind:value="user.key"
+              v-bind:background-color="user.color"
+              dark
+              dense
+            ></v-checkbox>
+          </v-card>
+        </v-card>
+        <div id="rendezvous-results" />
       </v-card>
     </v-card>
-    <div id="rendezvous-results" />
   </div>
 </template>
 <style scoped>
@@ -69,7 +70,16 @@ export default {
       selectedPlayers: [],
       // Giant constant used to force the slider to be at the end initially.
       maxTimeMinutes: 10000,
-      showDetails: true,
+      details_headers: [
+        {
+          value: 'player',
+          text: 'Player',
+        },
+        {
+          value: 'distance',
+          text: 'Distance',
+        },
+      ],
     };
   },
   name: 'RendezvousResults',
@@ -109,6 +119,36 @@ export default {
         });
       }
       return output;
+    },
+    detailedResults: function() {
+      if (this.players == null || this.player_data == null) {
+        console.error('Players or player_data is missing');
+        return;
+      }
+      let results = [];
+      for (const key of Object.keys(this.players)) {
+        const username = this.players[key].username;
+        const sanitizedUsername = sanitizeHtml(username, {
+          allowedTags: [],
+          allowedAttributes: {},
+          disallowedTagsMode: 'recursiveEscape',
+        });
+        const position_history = this.player_data[key].position_history;
+        let total_distance = 0;
+        let last_position = position_history[0];
+        for (const position of Object.values(position_history)) {
+          total_distance += maps_util.haversine_distance(
+            last_position,
+            position,
+          );
+          last_position = position;
+        }
+        results.push({
+          player: sanitizedUsername,
+          distance: `${total_distance.toFixed(2)} km`,
+        });
+      }
+      return results;
     },
   },
   methods: {
@@ -186,13 +226,6 @@ export default {
           );
           last_position = position;
         }
-        if (this.showDetails) {
-          const info = new google.maps.InfoWindow({
-            content: `${sanitizedUsername}: ${total_distance.toFixed(2)} km`,
-          });
-          info.open(this.map, startMarker);
-        }
-
         const lineSymbol = {
           path: google.maps.SymbolPath.FORWARD_OPEN_ARROW,
           strokeOpacity: 0.5,
@@ -234,9 +267,6 @@ export default {
       this.refreshMarkers();
     },
     maxTimeMinutes: function() {
-      this.refreshMarkers();
-    },
-    showDetails: function() {
       this.refreshMarkers();
     },
   },

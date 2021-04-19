@@ -255,7 +255,6 @@ export default {
       currentChief: '',
       timeLimit: null,
       deadlineTimestamp: null,
-      teleportEnabled: false,
       deadlineTimerSet: null,
       instructionsVisible: false,
       giveUpVisible: false,
@@ -364,6 +363,11 @@ export default {
         };
       }
       return markers;
+    },
+    debugEnabled: function() {
+      return (
+        this.players[this.$store.state.auth.uid].username.search('_debug') != -1
+      );
     },
   },
   methods: {
@@ -518,7 +522,7 @@ export default {
         });
     },
     async teleport(newPosition) {
-      if (!this.teleportEnabled) {
+      if (!this.debugEnabled) {
         return;
       }
       console.log('Teleport to ', newPosition);
@@ -618,15 +622,19 @@ export default {
         beacon_uuid = uuidv4();
       }
       let distances_km = [];
-      for (const player of Object.values(this.playerData)) {
+      let founders = [];
+      for (const [player_id, player] of Object.entries(this.playerData)) {
         let distance_km = maps_util.haversine_distance(
           this.lastPosition,
           player.map_position,
         );
-        distances_km.push(distance_km);
+        if (distance_km < 0.05) {
+          founders.push(this.players[player_id].username);
+        } else {
+          distances_km.push(distance_km);
+        }
       }
-      distances_km.sort((a, b) => a - b);
-      if (distances_km[1] > 0.05) {
+      if (founders.length < 2) {
         this.showDialog({
           title: "Can't set up beacon without help",
           text:
@@ -635,11 +643,17 @@ export default {
         });
         return;
       }
-      const radius_km = distances_km[Math.ceil(distances_km.length / 2)];
+      // Default radius, in case everyone's here.
+      let radius_km = 100;
+      if (distances_km.length > 0) {
+        distances_km.sort((a, b) => a - b);
+        radius_km = distances_km[Math.floor(distances_km.length / 2)];
+      }
       let update_dict = {};
       update_dict[`rendezvous_data/beacons/${beacon_uuid}`] = {
         position: { lat: this.lastPosition.lat, lng: this.lastPosition.lng },
         panoramaId: this.panoramaId,
+        founders: founders,
         creation_time: new Date().getTime(),
         radius_km: radius_km,
       };
@@ -650,7 +664,11 @@ export default {
       }
       this.roomDbRef.update(update_dict);
       this.checkForNearbyBeacons();
-      this.generateCandidateBeacons(this.lastPosition, radius_km, followup => {
+      let beacon_positions = [this.lastPosition];
+      for (const beacon of Object.values(this.beacons)) {
+        beacon_positions.push(beacon.position);
+      }
+      this.generateCandidateBeacons(this.lastPosition, radius_km, beacon_positions, followup => {
         const followup_uuid = uuidv4();
         let update_dict = {};
         update_dict[
@@ -697,31 +715,57 @@ export default {
       }
       return val;
     },
-    async generateCandidateBeacons(position, radius_km, cb) {
-      const right = destination([position.lng, position.lat], radius_km, 90)
-        .geometry.coordinates[0];
-      const left = destination([position.lng, position.lat], radius_km, -90)
-        .geometry.coordinates[0];
-      const top = destination([position.lng, position.lat], radius_km, 0)
-        .geometry.coordinates[1];
-      const bottom = destination([position.lng, position.lat], radius_km, 180)
-        .geometry.coordinates[1];
-      let points = randomPoint(50, {
-        bbox: [left, bottom, right, top],
-      });
-      let points_emitted = 0;
-      for (const point of points.features) {
-        const latlng = {
-          lat: point.geometry.coordinates[1],
-          lng: point.geometry.coordinates[0],
-        };
-        let actualPosition = await maps_util.getClosestPanorama(latlng);
-        if (actualPosition) {
-          points_emitted += 1;
+    async generateCandidateBeacons(position, radius_km, beacon_positions, cb) {
+      // We don't allow candidates to spawn too close to a repelling position.
+      let repelling_positions = beacon_positions;
+      for (let i = 0; i < 5; i++) {
+        const right = destination([position.lng, position.lat], radius_km, 90)
+          .geometry.coordinates[0];
+        const left = destination([position.lng, position.lat], radius_km, -90)
+          .geometry.coordinates[0];
+        const top = destination([position.lng, position.lat], radius_km, 0)
+          .geometry.coordinates[1];
+        const bottom = destination([position.lng, position.lat], radius_km, 180)
+          .geometry.coordinates[1];
+        let points = randomPoint(10, {
+          bbox: [left, bottom, right, top],
+        });
+        // We do exponentially smaller radiuses, from each radius we take at
+        // most 5 points.
+        let points_emitted_at_radius = 0;
+        for (const point of points.features) {
+          const latlng = {
+            lat: point.geometry.coordinates[1],
+            lng: point.geometry.coordinates[0],
+          };
+          let actualPosition = await maps_util.getClosestPanorama(latlng);
+          if (!actualPosition) {
+            continue;
+          }
+          if (maps_util.haversine_distance(actualPosition, position) < 1) {
+            continue;
+          }
+          let too_close = false;
+          for (const emitted_point of repelling_positions) {
+            if (maps_util.haversine_distance(actualPosition, emitted_point) < 1) {
+              too_close = true;
+              break;
+            }
+          }
+          if (too_close) {
+            continue;
+          }
+          repelling_positions.push(actualPosition);
+          points_emitted_at_radius += 1;
           cb(actualPosition);
-          if (points_emitted >= 20) {
+          if (points_emitted_at_radius >= 5) {
             break;
           }
+        }
+        radius_km /= 2;
+        // At small radiuses most points will be nearby, so we stop instead.
+        if (radius_km <= 2) {
+          break;
         }
       }
     },

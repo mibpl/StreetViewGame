@@ -130,17 +130,15 @@ class GoogleMapsWrapper {
     var rlat2 = p2.lat * (Math.PI / 180); // Convert degrees to radians
     var difflat = rlat2 - rlat1; // Radian difference (latitudes)
     var difflon = (p2.lng - p1.lng) * (Math.PI / 180); // Radian difference (longitudes)
-
+    const sin_difflat_2 = Math.sin(difflat / 2);
+    const sin_difflon_2 = Math.sin(difflon / 2);
     var d =
       2 *
       R *
       Math.asin(
         Math.sqrt(
-          Math.sin(difflat / 2) * Math.sin(difflat / 2) +
-            Math.cos(rlat1) *
-              Math.cos(rlat2) *
-              Math.sin(difflon / 2) *
-              Math.sin(difflon / 2),
+          sin_difflat_2 * sin_difflat_2 +
+            Math.cos(rlat1) * Math.cos(rlat2) * sin_difflon_2 * sin_difflon_2,
         ),
       );
     return d;
