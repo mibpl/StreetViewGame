@@ -32,7 +32,7 @@ export default {
   },
   data: function() {
     return {
-      position: new google.maps.LatLng(37.86926, -122.254811),
+      position: new google.maps.LatLng(37.755960, -122.412312),
     };
   },
   name: 'LocationPicker',
