@@ -35,13 +35,19 @@
           />
         </v-col>
       </v-row>
+      <v-row v-if="gameMode == 'race'">
+        <v-col>
+        <p>Goal</p>
+        <LocationPicker @on-click="goalLocationChange($event)" />
+        </v-col>
+      </v-row>
       <v-row>
         <v-col>
           <div
             v-if="
               gameMode == 'rendezvous' &&
-                selectedShapeNames.length == 0 &&
-                kmlPointCount == 0
+              selectedShapeNames.length == 0 &&
+              kmlPointCount == 0
             "
           >
             <span class="red--text">Warning:</span> for rendezvous to be
@@ -109,8 +115,11 @@ import 'firebase/database';
 import { mapActions, mapMutations } from 'vuex';
 import { roomObjectPath } from '@/firebase_utils.js';
 import { fetchShapesIndex } from '@/game_gen/shapes_util.js';
+import MarkerMap from './MarkerMap.vue';
+import LocationPicker from './LocationPicker.vue';
 
 export default {
+  components: { MarkerMap, LocationPicker },
   name: 'LobbyOptions',
   props: {
     isChief: {
@@ -122,7 +131,7 @@ export default {
       required: true,
     },
   },
-  data: function() {
+  data: function () {
     return {
       gameMode: 'classic',
       gameModeProperties: {
@@ -133,6 +142,9 @@ export default {
         rendezvous: {
           hint:
             'Players start at random locations and must rendezvous to a single location.',
+        },
+        race: {
+          hint: 'Players race from A to  B.',
         },
       },
       timeLimit: '',
@@ -147,13 +159,13 @@ export default {
     };
   },
   computed: {
-    roomOptionsRef: function() {
+    roomOptionsRef: function () {
       return firebase
         .database()
         .ref(roomObjectPath(this.roomId))
         .child('options');
     },
-    playersDbRef: function() {
+    playersDbRef: function () {
       return firebase
         .database()
         .ref(roomObjectPath(this.roomId))
@@ -163,7 +175,7 @@ export default {
   watch: {
     // Debounce causes the function to be fired at most once in the specified
     // time period.
-    timeLimit: _.debounce(function(newTimeLimit, oldTimeLimit) {
+    timeLimit: _.debounce(function (newTimeLimit, oldTimeLimit) {
       if (!this.isChief) {
         return;
       }
@@ -171,7 +183,7 @@ export default {
         return;
       }
       this.timeLimitSyncing = true;
-      this.roomOptionsRef.child('time_limit').set(newTimeLimit, error => {
+      this.roomOptionsRef.child('time_limit').set(newTimeLimit, (error) => {
         if (error) {
           console.error(error);
           this.$emit('firebase_error', "Couldn't modify time limit.");
@@ -183,14 +195,14 @@ export default {
         });
       });
     }, 500),
-    panoramaLookupPrecision: function(newValue) {
+    panoramaLookupPrecision: function (newValue) {
       if (!this.isChief) {
         return;
       }
       this.setPanoramaLookupPrecision(newValue);
       this.panoramaLookupPrecision = newValue;
     },
-    selectedShapeNames: function(newSelectedShapes, oldSelectedShapes) {
+    selectedShapeNames: function (newSelectedShapes, oldSelectedShapes) {
       if (!this.isChief) {
         return;
       }
@@ -198,7 +210,7 @@ export default {
         return;
       }
       this.shapesInputSyncing = true;
-      this.roomOptionsRef.child('shapes').set(newSelectedShapes, error => {
+      this.roomOptionsRef.child('shapes').set(newSelectedShapes, (error) => {
         if (error) {
           console.error(error);
           this.$emit('firebase_error', "Couldn't modify locations.");
@@ -215,7 +227,7 @@ export default {
         });
       });
     },
-    gameMode: function(gameModeValue, oldGameModeValue) {
+    gameMode: function (gameModeValue, oldGameModeValue) {
       if (!this.isChief) {
         return;
       }
@@ -223,7 +235,7 @@ export default {
         return;
       }
       this.gameModeSyncing = true;
-      this.roomOptionsRef.child('game_mode').set(gameModeValue, error => {
+      this.roomOptionsRef.child('game_mode').set(gameModeValue, (error) => {
         if (error) {
           console.error(error);
           this.$emit('firebase_error', "Couldn't modify game mode.");
@@ -241,7 +253,7 @@ export default {
       });
     },
     // Once we learn we are a chief, trigger all the computations needed.
-    isChief: function(newVal) {
+    isChief: function (newVal) {
       if (!newVal) {
         console.error('We lost "chief" status! This should never happen!');
         return;
@@ -254,6 +266,12 @@ export default {
     },
   },
   methods: {
+    goalLocationChange(data) {
+      console.log(data);
+      this.roomOptionsRef.child('race_goal_location').set(data, (error) => {
+        console.log("Failed to save location goal");
+      });
+    },
     locationFileChange(data) {
       if (!this.isChief) {
         return;
@@ -261,7 +279,7 @@ export default {
 
       const files = data.target.files;
       if (files.length == 1) {
-        files[0].text().then(data => {
+        files[0].text().then((data) => {
           const parser = new DOMParser();
           const xmlDoc = parser.parseFromString(data, 'text/xml');
 
@@ -291,17 +309,17 @@ export default {
     },
     loadAvailableShapes() {
       return fetchShapesIndex()
-        .then(shapesIndex => {
+        .then((shapesIndex) => {
           console.log('Fetched following shapes:', shapesIndex);
           this.setAvailableShapes({ shapes: shapesIndex });
           this.availableShapeNames = Object.keys(shapesIndex).sort();
         })
-        .catch(error => {
+        .catch((error) => {
           console.error('Failed to fetch shapes index. ', error);
         });
     },
     watchOptionsChanges() {
-      this.roomOptionsRef.on('value', optionsSnapshot => {
+      this.roomOptionsRef.on('value', (optionsSnapshot) => {
         const newOptions = optionsSnapshot.val();
 
         const newTimeLimit = newOptions?.time_limit || '';
@@ -339,10 +357,10 @@ export default {
       'setPanoramaLookupPrecision',
     ]),
   },
-  mounted: function() {
+  mounted: function () {
     this.watchOptionsChanges();
   },
-  unmounted: function() {
+  unmounted: function () {
     this.cleanUp();
   },
 };

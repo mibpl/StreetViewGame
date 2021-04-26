@@ -24,6 +24,9 @@ handlers:
   - url: /rendezvous/.*
     static_files: index.html
     upload: index.html
+  - url: /race/.*
+    static_files: index.html
+    upload: index.html
   - url: /(.*)$
     static_files: \1
     upload: (.*)
