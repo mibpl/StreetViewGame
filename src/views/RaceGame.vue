@@ -120,6 +120,11 @@
         v-bind:beaconMarkers="beaconMarkers"
       />
     </div>
+    <div id="board-overlay">
+      <RankBoard 
+        v-bind:playerPositions="streetviewMarkerPositions"
+      />
+    </div>
     <PersistentDialog />
     <Dialog />
     <Toast />
@@ -147,6 +152,18 @@
   cursor: pointer;
   display: block;
   transition: all 0.2s ease-in-out;
+}
+
+#board-overlay {
+  position: absolute;
+  /*width: 400px;*/
+  /*height: 200px;*/
+  right: 0;
+  top: 0;
+  /*background-color: rgba(172, 129, 10, 0.5);*/
+  z-index: 2;
+  cursor: pointer;
+  display: block;
 }
 
 #map-overlay:hover {
@@ -182,6 +199,7 @@ import firebase from 'firebase/app';
 import Streets from '@/components/Streets.vue';
 import MarkerMap from '@/components/MarkerMap.vue';
 import PlayerList from '@/components/PlayerList.vue';
+import RankBoard from '@/components/RankBoard.vue';
 import Dialog from '@/components/Dialog';
 import PersistentDialog from '@/components/PersistentDialog';
 import RendezvousResults from '@/components/RendezvousResults';
@@ -205,6 +223,7 @@ export default {
     PersistentDialog,
     RendezvousResults,
     Toast,
+    RankBoard,
   },
   data: function() {
     return {
@@ -288,7 +307,7 @@ export default {
       for (const [uuid, data] of Object.entries(this.players)) {
         let otherPlayerPosition = this.playerData[uuid].map_position;
         let distanceKm = maps_util.haversine_distance(
-          playerCurrentPosition,
+          this.goalLocation,
           otherPlayerPosition,
         );
         const username = data.username;
