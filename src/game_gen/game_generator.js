@@ -188,6 +188,8 @@ export class GameGenerator {
       await this.generateClassicGameState(posGenFn);
     } else if (gameMode == 'rendezvous') {
       await this.generateRendezvousGameState(players, posGenFn);
+    } else if (gameMode == 'race') {
+      await this.generateRaceGameState(players, posGenFn);
     } else {
       console.error('Unrecognized gameMode: ', gameMode);
     }
@@ -237,6 +239,46 @@ export class GameGenerator {
     try {
       const roomRef = firebase.database().ref(this.roomPath);
       await roomRef.child('rendezvous_data').set(rendezvous_data);
+    } catch (error) {
+      console.error(
+        'Failed to write player locations to db with error: ',
+        error,
+      );
+      throw new Error('Cannot connect to Firebase.');
+    }
+  }
+
+  async generateRaceGameState(players, posGenFn) {
+    console.log('Generating Race game state for:', players);
+    if (this.cancelled) throw new CancelledError();
+
+    const start_position = await posGenFn();
+    if (start_position === null) {
+      throw new Error(
+        'Could not find enough valid points within the selected ' +
+          'locations. Try different location settings.',
+      );
+    }
+
+    const player_data = {};
+    for (const player of Object.keys(players)) {
+      if (this.cancelled) throw new CancelledError();
+      player_data[player] = {
+        map_position: start_position,
+        position_history: null,
+      };
+    }
+    const data = {
+      player_data: player_data,
+      finished: false,
+    };
+    console.log('write', data);
+
+    if (this.cancelled) throw new CancelledError();
+
+    try {
+      const roomRef = firebase.database().ref(this.roomPath);
+      await roomRef.child('race_data').set(data);
     } catch (error) {
       console.error(
         'Failed to write player locations to db with error: ',
