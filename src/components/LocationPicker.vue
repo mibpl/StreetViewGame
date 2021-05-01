@@ -38,8 +38,6 @@ export default {
   },
   data: function () {
     return {
-      position: new google.maps.LatLng(37.75596, -122.412312).toJSON(),
-      pickingEnabled: false,
     };
   },
   name: 'LocationPicker',
@@ -60,8 +58,17 @@ export default {
     this.marker = new google.maps.Marker({
       position: this.position,
       map: this.map,
-      title: 'Location Picker',
+      title: '',
     });
+
+    this.circle = new google.maps.Circle({
+      clickable: false,
+      fillOpacity: 0.2,
+      map: this.map,
+      center: this.position,
+      radius: 0.5 * 1000,
+    });
+
     if (this.pickingEnabled === true) {
       this.map.addListener('click', (event) => {
         maps
@@ -74,11 +81,21 @@ export default {
   },
   watch: {
     position: function (newPosition) {
-      this.marker.setMap(null);
+      if (this.marker) this.marker.setMap(null);
+      if (this.circle) this.circle.setMap(null);
+
       this.marker = new google.maps.Marker({
         position: newPosition,
         map: this.map,
         title: '',
+      });
+
+      this.circle = new google.maps.Circle({
+        clickable: false,
+        fillOpacity: 0.2,
+        map: this.map,
+        center: newPosition,
+        radius: 0.5 * 1000,
       });
     },
   },
