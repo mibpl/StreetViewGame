@@ -31,7 +31,6 @@ export default {
   },
   computed: {
     sortedBoard: function () {
-      console.log(this.playerPositions);
       let arr = [];
       for (const uuid in this.playerPositions) {
         arr.push({
