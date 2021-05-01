@@ -43,6 +43,15 @@ const routes = [
       import(/* webpackChunkName: "rendezvous" */ '@/views/RendezvousGame.vue'),
   },
   {
+    path: '/race/:roomId',
+    name: 'race',
+    // route level code-splitting
+    // this generates a separate chunk (about.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () =>
+      import(/* webpackChunkName: "race" */ '@/views/RaceGame.vue'),
+  },
+  {
     path: '*',
     redirect: { name: 'main' },
   },
