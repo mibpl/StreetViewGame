@@ -5,11 +5,13 @@
         <thead>
           <tr>
             <th class="text-left">Goal Proximity</th>
+            <th class="text-left">km away from you</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="{ username, distance_km } in sortedBoard" :key="username">
+          <tr v-for="{ username, distance_km, distance_to_player_km } in sortedBoard" :key="username">
             <td>{{ username }}</td>
+            <td>{{ distance_to_player_km.toFixed(2) }}</td>
             <!-- <td>{{ distance_km }}</td> -->
           </tr>
         </tbody>
@@ -36,6 +38,7 @@ export default {
         arr.push({
           username: this.playerPositions[uuid].name,
           distance_km: this.playerPositions[uuid].distanceKm,
+          distance_to_player_km: this.playerPositions[uuid].distanceToPlayerKm,
         });
       }
       arr.sort((a, b) => a.distance_km - b.distance_km);

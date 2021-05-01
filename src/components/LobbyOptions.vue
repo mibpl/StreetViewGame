@@ -37,8 +37,12 @@
       </v-row>
       <v-row v-if="gameMode == 'race'">
         <v-col>
-        <p>Goal</p>
-        <LocationPicker @on-click="goalLocationChange($event)" :pickingEnabled="isChief" v-bind:position="selectedGoalLocation" />
+          <p>Goal</p>
+          <LocationPicker
+            @on-click="goalLocationChange($event)"
+            :pickingEnabled="isChief"
+            v-bind:position="selectedGoalLocation"
+          />
         </v-col>
       </v-row>
       <v-row>
@@ -268,8 +272,14 @@ export default {
   },
   methods: {
     goalLocationChange(data) {
+      if (data == null || data == undefined) return;
+      console.log('saving data', data);
       this.roomOptionsRef.child('race_goal_location').set(data, (error) => {
-        console.log("Failed to save location goal", error);
+        if (error) {
+          console.error('Failed to save location goal', error);
+        } else {
+          this.selectedGoalLocation = data;
+        }
       });
     },
     locationFileChange(data) {
@@ -319,6 +329,7 @@ export default {
         });
     },
     watchOptionsChanges() {
+      console.log("SETTING UP WATCHER");
       this.roomOptionsRef.on('value', (optionsSnapshot) => {
         const newOptions = optionsSnapshot.val();
 
@@ -336,7 +347,7 @@ export default {
 
         this.selectedGoalLocation = newOptions?.race_goal_location;
 
-        console.log("option change", newOptions);
+        console.log('option change', newOptions);
 
         const newGameMode = newOptions?.game_mode || '';
         this.gameMode = newGameMode;
