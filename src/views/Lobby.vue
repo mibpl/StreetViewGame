@@ -213,7 +213,8 @@ export default {
             this.gameModeDbRef.once('value').then(gameMode => {
               if (
                 gameMode.val() != 'classic' &&
-                gameMode.val() != 'rendezvous'
+                gameMode.val() != 'rendezvous' &&
+                gameMode.val() != 'race'
               ) {
                 this.showDialog({
                   title: `Game mode ${gameMode.val()} unknown`,

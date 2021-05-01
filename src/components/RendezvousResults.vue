@@ -62,6 +62,10 @@ export default {
       type: Boolean,
       required: true,
     },
+    goal: {
+      type: Object,
+      required: false,
+    }
   },
   data: function() {
     return {
@@ -211,6 +215,15 @@ export default {
           strokeOpacity: 0.7,
         });
         this.markers.push(line);
+      }
+      if (this.goal) {
+        const goalMarker = new google.maps.Marker({
+          position: this.goal,
+          map: this.map,
+          title: "Goal",
+          label: "Goal",
+        });
+        this.markers.push(goal);
       }
       if (this.victory) {
         const final_center_point = maps_util.centerPoint(final_positions);
