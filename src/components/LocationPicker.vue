@@ -31,10 +31,14 @@ export default {
       type: Boolean,
       required: false,
     },
+    position: {
+      type: Object,
+      required: true,
+    },
   },
   data: function () {
     return {
-      position: new google.maps.LatLng(37.75596, -122.412312),
+      position: new google.maps.LatLng(37.75596, -122.412312).toJSON(),
       pickingEnabled: false,
     };
   },
@@ -50,7 +54,7 @@ export default {
       },
     );
     this.$nextTick(() => {
-      this.$emit('on-click', this.position.toJSON());
+      this.$emit('on-click', this.position);
     });
 
     this.marker = new google.maps.Marker({
@@ -63,16 +67,20 @@ export default {
         maps
           .getClosestPanorama(event.latLng.toJSON(), 2000)
           .then((snappedLatLng) => {
-            this.marker.setMap(null);
-            this.marker = new google.maps.Marker({
-              position: snappedLatLng,
-              map: this.map,
-              title: '',
-            });
             this.$emit('on-click', snappedLatLng);
           });
       });
     }
+  },
+  watch: {
+    position: function (newPosition) {
+      this.marker.setMap(null);
+      this.marker = new google.maps.Marker({
+        position: newPosition,
+        map: this.map,
+        title: '',
+      });
+    },
   },
 };
 </script>
