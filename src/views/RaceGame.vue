@@ -310,6 +310,10 @@ export default {
           this.goalLocation,
           otherPlayerPosition,
         );
+        let distanceToPlayerKm = maps_util.haversine_distance(
+          playerCurrentPosition,
+          otherPlayerPosition,
+        );
         const username = data.username;
         let color = maps_util
           .colorForUuid(uuid, Object.keys(this.players))
@@ -319,6 +323,7 @@ export default {
           distanceKm: distanceKm,
           position: otherPlayerPosition,
           color: color,
+          distanceToPlayerKm: distanceToPlayerKm,
         };
         markerPositions[uuid] = playerPosition;
       }

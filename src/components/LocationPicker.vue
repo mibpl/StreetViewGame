@@ -74,6 +74,7 @@ export default {
         maps
           .getClosestPanorama(event.latLng.toJSON(), 2000)
           .then((snappedLatLng) => {
+            console.log("found picker position, event fired");
             this.$emit('on-click', snappedLatLng);
           });
       });
