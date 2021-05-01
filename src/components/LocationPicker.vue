@@ -26,10 +26,16 @@
 import maps from '@/maps_util.js';
 
 export default {
-  props: {},
+  props: {
+    pickingEnabled: {
+      type: Boolean,
+      required: false,
+    },
+  },
   data: function () {
     return {
       position: new google.maps.LatLng(37.75596, -122.412312),
+      pickingEnabled: false,
     };
   },
   name: 'LocationPicker',
@@ -52,17 +58,21 @@ export default {
       map: this.map,
       title: 'Location Picker',
     });
-    this.map.addListener('click', (event) => {
-      maps.getClosestPanorama(event.latLng.toJSON(), 2000).then((snappedLatLng) => {
-        this.marker.setMap(null);
-        this.marker = new google.maps.Marker({
-          position: snappedLatLng,
-          map: this.map,
-          title: '',
-        });
-        this.$emit('on-click', snappedLatLng);
+    if (this.pickingEnabled === true) {
+      this.map.addListener('click', (event) => {
+        maps
+          .getClosestPanorama(event.latLng.toJSON(), 2000)
+          .then((snappedLatLng) => {
+            this.marker.setMap(null);
+            this.marker = new google.maps.Marker({
+              position: snappedLatLng,
+              map: this.map,
+              title: '',
+            });
+            this.$emit('on-click', snappedLatLng);
+          });
       });
-    });
+    }
   },
 };
 </script>

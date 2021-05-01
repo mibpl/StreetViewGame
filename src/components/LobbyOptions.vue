@@ -38,7 +38,7 @@
       <v-row v-if="gameMode == 'race'">
         <v-col>
         <p>Goal</p>
-        <LocationPicker @on-click="goalLocationChange($event)" />
+        <LocationPicker @on-click="goalLocationChange($event)" :pickingEnabled="isChief" />
         </v-col>
       </v-row>
       <v-row>
