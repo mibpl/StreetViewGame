@@ -43,6 +43,9 @@ export default {
         streetViewControl: false,
       },
     );
+    this.$nextTick(() => {
+      this.$emit('on-click', this.position.toJSON());
+    });
 
     this.marker = new google.maps.Marker({
       position: this.position,

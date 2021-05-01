@@ -267,7 +267,6 @@ export default {
   },
   methods: {
     goalLocationChange(data) {
-      console.log(data);
       this.roomOptionsRef.child('race_goal_location').set(data, (error) => {
         console.log("Failed to save location goal");
       });

@@ -322,7 +322,6 @@ export default {
         };
         markerPositions[uuid] = playerPosition;
       }
-      console.error(markerPositions);
       return markerPositions;
     },
     playerUuid: function() {
