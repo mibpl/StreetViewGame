@@ -110,7 +110,7 @@ export class GameGenerator {
   }
 
   async generateValidPositionFromKmlPoints() {
-    while (true) {
+    for (let i = 0; i < 60; i++) {
       if (this.kmlPoints.length == 0) {
         return null;
       }
@@ -233,7 +233,6 @@ export class GameGenerator {
       victory: false,
       finished: false,
     };
-    console.error('write', rendezvous_data);
 
     if (this.cancelled) throw new CancelledError();
 
