@@ -17,46 +17,48 @@
 }
 
 #location-picker-anchor {
-
   height: 500px;
 }
 </style>
 
 <script>
-
 /*global google*/
 import maps from '@/maps_util.js';
 
 export default {
-  props: {
-  },
-  data: function() {
+  props: {},
+  data: function () {
     return {
-      position: new google.maps.LatLng(37.755960, -122.412312),
+      position: new google.maps.LatLng(37.75596, -122.412312),
     };
   },
   name: 'LocationPicker',
-  mounted: function() {
-    this.map = new google.maps.Map(document.getElementById('location-picker-anchor'), {
-      zoom: 4,
-      center: new google.maps.LatLng(0, 0),
-      disableDefaultUI: false,
-      streetViewControl: false,
-    });
+  mounted: function () {
+    this.map = new google.maps.Map(
+      document.getElementById('location-picker-anchor'),
+      {
+        zoom: 4,
+        center: new google.maps.LatLng(0, 0),
+        disableDefaultUI: false,
+        streetViewControl: false,
+      },
+    );
 
     this.marker = new google.maps.Marker({
       position: this.position,
       map: this.map,
       title: 'Location Picker',
     });
-    this.map.addListener('click', event => {
-      this.marker.setMap(null);
-      this.marker = new google.maps.Marker({
-        position: event.latLng,
-        map: this.map,
-        title: '',
+    this.map.addListener('click', (event) => {
+      maps.getClosestPanorama(event.latLng.toJSON(), 2000).then((snappedLatLng) => {
+        this.marker.setMap(null);
+        this.marker = new google.maps.Marker({
+          position: snappedLatLng,
+          map: this.map,
+          title: '',
+        });
+        this.$emit('on-click', snappedLatLng);
       });
-      this.$emit('on-click', this.marker.position.toJSON());
     });
   },
 };
