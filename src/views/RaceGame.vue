@@ -122,7 +122,7 @@
     </div>
     <div id="board-overlay">
       <RankBoard 
-        v-bind:playerPositions="streetviewMarkerPositions"
+        v-bind:currentPlayerPositions="boardPositions"
       />
     </div>
     <PersistentDialog />
@@ -297,7 +297,7 @@ export default {
     roomId: function() {
       return this.$route.params.roomId;
     },
-    streetviewMarkerPositions: function() {
+    boardPositions: function() {
       let markerPositions = {};
       if (Object.keys(this.playerData).length == 0) {
         return {};
@@ -328,6 +328,19 @@ export default {
         markerPositions[uuid] = playerPosition;
       }
       return markerPositions;
+    },
+    streetviewMarkerPositions() {
+      const positions = {};
+      for(const [uuid, data] of Object.entries( this.boardPositions)) {
+        const playerPosition = {
+          name: data.name,
+          distanceKm: data.distanceToPlayerKm, // this has to be secret ¯\_(ツ)_/¯
+          position: data.position,
+          color: data.color,
+        };
+        positions[uuid] = playerPosition;
+      }
+      return positions;
     },
     playerUuid: function() {
       return this.$store.state.auth.uid;
