@@ -298,10 +298,12 @@ export default {
           allowedAttributes: {},
           disallowedTagsMode: 'recursiveEscape',
         });
+        let distance_suffix = '';
+        if (marker_info.distanceKm != null) distance_suffix = `${marker_info.distanceKm.toFixed(3)}km`;
         const icon =
           'http://chart.apis.google.com/chart?chst=d_map_spin&' +
           `chld=2.1|0|${marker_info.color}|13|b|${sanitizedName}|` +
-          `${marker_info.distanceKm.toFixed(3)}km`;
+          distance_suffix;
         if (player_uuid in this.mapPlayerMarkers) {
           this.mapPlayerMarkers[player_uuid].setPosition(marker_info.position);
           this.mapPlayerMarkers[player_uuid].setOptions({
@@ -317,6 +319,7 @@ export default {
           this.mapPlayerMarkers[player_uuid] = marker_obj;
         }
       }
+      console.log(this.mapPlayerMarkers);
       for (const [beacon_uuid, beacon] of Object.entries(this.beaconMarkers)) {
         const marker_icon = beacon.connected ? 'glyphish_redo' : 'glyphish_zap';
         const marker_color = beacon.connected
