@@ -38,7 +38,7 @@ export default {
     refreshCooldownMs: {
       type: Number,
       required: false,
-      default: 1*1000,
+      default: 20*1000,
     }
   },
   data: function () {
