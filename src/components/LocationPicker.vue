@@ -66,7 +66,7 @@ export default {
       fillOpacity: 0.2,
       map: this.map,
       center: this.position,
-      radius: 0.5 * 1000,
+      radius: 0.2 * 1000,
     });
 
     if (this.pickingEnabled === true) {
