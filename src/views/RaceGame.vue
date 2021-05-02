@@ -356,7 +356,7 @@ export default {
       let markers = {
         goal: {
           connected: false,
-          radius_km: 0.5,
+          radius_km: 0.2,
           in_range: false,
           position: this.goalLocation,
         },
@@ -476,7 +476,7 @@ export default {
             player_1.map_position,
             this.goalLocation,
           );
-          if (distance_km <= 0.5) {
+          if (distance_km <= 0.2) {
             this.finishGame(true);
             return true;
           }
